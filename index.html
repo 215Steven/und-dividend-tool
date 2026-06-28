@@ -1,0 +1,2236 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UND 配息率工具 — 富邦人壽投資型保險</title>
+<meta name="description" content="富邦人壽投資型保險配息率查詢工具，支援篩選、排序、異常偵測。非官方工具。">
+<style>
+/* ═══════════════════════════════════════════════
+   UND 配息率工具 — 全域樣式
+   ═══════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --navy:        #1a3a5c;
+  --blue:        #2657a0;
+  --blue-mid:    #3b82c4;
+  --blue-pale:   #e8f0fe;
+  --bg:          #eef2f8;
+  --surface:     #ffffff;
+  --border:      #d8e4f0;
+  --border-soft: #e8f0fa;
+  --text:        #1a2535;
+  --muted:       #637080;
+  --shadow:      0 1px 6px rgba(26,58,92,0.08), 0 4px 20px rgba(26,58,92,0.06);
+  --shadow-sm:   0 1px 4px rgba(26,58,92,0.07);
+  --green:       #16a34a;
+  --orange:      #ea580c;
+  --red:         #dc2626;
+  --yellow:      #ca8a04;
+  --accent-bar:  3px solid var(--blue);
+  --radius:      10px;
+}
+body {
+  font-family: '微軟正黑體','Microsoft JhengHei','PingFang TC','Noto Sans TC',Arial,sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100dvh;
+}
+/* ── Icon 系統（取代 Emoji，統一線性圖示）─────── */
+.i {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  vertical-align: -2px;
+  flex-shrink: 0;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.i-sm { width: 11px; height: 11px; vertical-align: -1px; }
+.i-lg { width: 17px; height: 17px; vertical-align: -3px; }
+@keyframes i-spin { to { transform: rotate(360deg); } }
+.i-spin { animation: i-spin 0.9s linear infinite; }
+/* ── 互動焦點樣式（鍵盤可達性）───────────────── */
+a:focus-visible, button:focus-visible {
+  outline: 2px solid var(--blue-mid);
+  outline-offset: 2px;
+}
+/* ── Header ─────────────────────────────────── */
+.und-header {
+  background: linear-gradient(135deg, #0f2744 0%, var(--navy) 40%, var(--blue) 75%, #2e6ec5 100%);
+  color: #fff;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  box-shadow: 0 2px 12px rgba(10,30,60,0.36), 0 1px 0 rgba(255,255,255,0.07) inset;
+}
+.und-header-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.09);
+}
+.und-title-block { flex: 1; min-width: 0; }
+.und-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.2px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.und-title-badge {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  color: rgba(255,255,255,0.55);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.18);
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+.und-subtitle {
+  font-size: 11px;
+  opacity: 0.65;
+  margin-top: 3px;
+  letter-spacing: 0.1px;
+}
+.und-btn {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.28);
+  color: rgba(255,255,255,0.92);
+  padding: 7px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.und-btn:hover {
+  background: rgba(255,255,255,0.22);
+  border-color: rgba(255,255,255,0.45);
+}
+.und-btn:active { transform: scale(0.96); }
+/* ── Main Container ──────────────────────────── */
+.und-main {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 16px 60px;
+}
+/* ── Stats Cards ─────────────────────────────── */
+.und-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.und-stat {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 13px 16px 11px;
+  border: 1px solid var(--border);
+  border-top: var(--accent-bar);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.18s, transform 0.18s;
+}
+.und-stat:hover {
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+.und-stat-num {
+  font-size: 24px;
+  font-weight: 900;
+  color: var(--navy);
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+}
+.und-stat-label {
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+/* ── Config Warning ──────────────────────────── */
+.und-config-warn {
+  display: none;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #78350f;
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+.und-config-warn code {
+  background: #fef3c7;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+}
+/* ── Progress Bar ────────────────────────────── */
+.und-progress-wrap {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 20px 22px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.und-progress-msg {
+  font-size: 13px;
+  color: var(--navy);
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.und-progress-track {
+  height: 8px;
+  background: #e5eaf2;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.und-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #4fc3f7, var(--navy));
+  border-radius: 4px;
+  width: 0%;
+  transition: width 0.35s ease;
+}
+/* ── Error ───────────────────────────────────── */
+.und-error {
+  display: none;
+  background: #fef2f2;
+  border-left: 4px solid var(--red);
+  border-radius: 0 10px 10px 0;
+  padding: 14px 18px;
+  font-size: 13px;
+  color: #7f1d1d;
+  margin-bottom: 14px;
+  line-height: 1.7;
+}
+/* ── Filter Panel ────────────────────────────── */
+.und-filter-panel {
+  display: none;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px 18px 12px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+}
+.und-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+/* 手機排序列：桌機隱藏，手機顯示 */
+.und-mobile-sort {
+  display: none;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: flex-end;
+}
+.und-mobile-sort .und-filter-item { flex: 1; min-width: 0; }
+.und-mobile-sort .und-filter-item select { width: 100%; }
+.und-filter-item label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.und-filter-item input,
+.und-filter-item select {
+  padding: 7px 10px;
+  border: 1.5px solid var(--border);
+  border-radius: 7px;
+  font-size: 13px;
+  font-family: inherit;
+  background: #f7fafd;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+.und-filter-item input:focus,
+.und-filter-item select:focus {
+  border-color: var(--blue-mid);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(59,130,196,0.12);
+}
+.und-filter-item input#ffs { width: 160px; }
+.und-filter-item input#ffr { width: 82px; }
+.und-filter-item select { min-width: 118px; }
+.und-reset-btn {
+  padding: 7px 16px;
+  background: #4b6278;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  font-weight: 700;
+  margin-top: 19px;
+  transition: background 0.18s, transform 0.1s;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.und-reset-btn:hover { background: #364e62; }
+.und-reset-btn:active { transform: scale(0.96); }
+/* ── Table Container ─────────────────────────── */
+.und-table-wrap {
+  display: none;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.und-row-count {
+  font-size: 11.5px;
+  color: var(--muted);
+  padding: 9px 16px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  background: #f5f8fc;
+  font-weight: 600;
+  letter-spacing: 0.1px;
+}
+.und-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-height: calc(100vh - 290px);
+  overflow-y: auto;
+}
+/* ── Data Table ──────────────────────────────── */
+table.und-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+table.und-tbl thead tr {
+  background: linear-gradient(to right, #152d4a, #1d3f65);
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+table.und-tbl th {
+  padding: 10px 18px 10px 9px;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  transition: background 0.12s;
+  position: relative;
+}
+table.und-tbl th:hover { background: rgba(255,255,255,0.1); }
+table.und-tbl th:last-child { border-right: none; }
+table.und-tbl th.r { text-align: right; }
+table.und-tbl th.c { text-align: center; }
+table.und-tbl th.sort-asc::after,
+table.und-tbl th.sort-desc::after {
+  content: '';
+  position: absolute;
+  right: 7px;
+  top: 50%;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+}
+table.und-tbl th.sort-asc::after  { border-bottom: 5px solid rgba(255,255,255,0.9); transform: translateY(-5px); }
+table.und-tbl th.sort-desc::after { border-top: 5px solid rgba(255,255,255,0.9); transform: translateY(0px); }
+table.und-tbl th .th-sub {
+  font-weight: 400;
+  font-size: 10px;
+  opacity: 0.7;
+  display: block;
+  margin-top: 1px;
+}
+table.und-tbl td {
+  padding: 7px 9px;
+  border-bottom: 1px solid #eef2f8;
+  vertical-align: top;
+  transition: background 0.1s;
+}
+table.und-tbl tbody tr:nth-child(even) td { background: #fafcff; }
+table.und-tbl tbody tr:hover td { background: #eef5ff !important; }
+table.und-tbl td.r { text-align: right; }
+table.und-tbl td.c { text-align: center; }
+/* Fund name link */
+.fund-link {
+  color: var(--navy);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(26,58,92,0.45);
+  line-height: 1.45;
+  display: inline-block;
+  max-width: 230px;
+  word-break: break-word;
+  transition: color 0.12s;
+}
+.fund-link:hover { color: var(--blue-mid); border-color: var(--blue-mid); }
+/* Frequency badges */
+.freq-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+}
+.fb-月配  { background: #2563eb; }
+.fb-季配  { background: #0891b2; }
+.fb-半年配 { background: #7c3aed; }
+.fb-年配  { background: #059669; }
+.freq-none { color: #b0b8c4; font-size: 11px; }
+/* Rate color coding */
+.rate-h { color: #dc2626; font-weight: 800; } /* ≥8% 高警示 */
+.rate-m { color: #ea580c; font-weight: 700; } /* 5–8% 中 */
+.rate-l { color: #16a34a; font-weight: 700; } /* <5%  低 */
+.rate-x { color: #d1d5db; }                    /* 無資料 */
+/* RR risk level colors */
+.rr-1 { color: #16a34a; font-weight: 700; }
+.rr-2 { color: #22c55e; font-weight: 700; }
+.rr-3 { color: #ca8a04; font-weight: 700; }
+.rr-4 { color: #f97316; font-weight: 700; }
+.rr-5 { color: #ef4444; font-weight: 700; }
+/* Return rate color coding */
+.ret-pos { color: #1d4ed8; font-weight: 700; } /* 正報酬 */
+.ret-neg { color: #dc2626; font-weight: 700; } /* 負報酬 */
+.ret-na  { color: #d1d5db; }                   /* 無資料 */
+/* 6-month dividend mini table */
+.div-tbl { border-collapse: collapse; }
+.div-tbl td {
+  padding: 1px 3px 1px 0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  white-space: nowrap;
+  line-height: 1.45;
+}
+.d-date  { color: #94a3b8; padding-right: 4px; }
+.d-amt   { text-align: right; min-width: 52px; padding: 1px 4px; border-radius: 3px; }
+.d-first { color: #1d4ed8; font-weight: 700; }
+.d-up    { background: #fef2f2; color: #dc2626; font-weight: 700; } /* 較前月增≥10% */
+.d-down  { background: #f0fdf4; color: #16a34a; font-weight: 700; } /* 較前月減≥10% */
+.trend   { font-size: 10px; margin-left: 2px; display: inline-block; vertical-align: top; margin-top: 1px; }
+.t-up    { color: #dc2626; }
+.t-down  { color: #16a34a; }
+.t-flat  { color: #94a3b8; }
+/* ── RWD：卡片模式（≤ 768px，手機 / iPad 直立）── */
+@media (max-width: 768px) {
+  .und-mobile-sort { display: flex; }
+  .und-table-scroll {
+    overflow-x: hidden;
+    max-height: none;
+  }
+  table.und-tbl          { display: block; }
+  table.und-tbl thead    { display: none; }
+  table.und-tbl tbody    { display: flex; flex-direction: column; gap: 10px; padding: 4px 2px 8px; }
+  /* 每列 → 卡片 */
+  table.und-tbl tr.vr {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+  /* 取消 stripe / hover 效果（卡片模式不需要） */
+  table.und-tbl tbody tr:nth-child(even) td { background: transparent; }
+  table.und-tbl tbody tr:hover td           { background: transparent !important; }
+  /* 每個 td → 標籤 + 值 水平排 */
+  table.und-tbl td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #f0f4f8;
+    padding: 7px 14px;
+    text-align: right !important;
+    min-height: 34px;
+  }
+  table.und-tbl td:last-child { border-bottom: none; }
+  table.und-tbl td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--muted);
+    font-size: 11px;
+    flex-shrink: 0;
+    text-align: left;
+    margin-right: 10px;
+    white-space: nowrap;
+  }
+  /* 基金名稱：佔滿全寬，垂直排列，加深底色 */
+  table.und-tbl td[data-label="基金名稱"] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 10px 14px 9px;
+    background: linear-gradient(135deg, #f0f5fc 0%, #f8faff 100%);
+    border-bottom: 2px solid var(--border);
+    text-align: left !important;
+  }
+  table.und-tbl td[data-label="基金名稱"]::before {
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: #94a3b8;
+    margin-right: 0;
+  }
+  table.und-tbl td[data-label="基金名稱"] .fund-link {
+    max-width: 100%;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--navy);
+    white-space: normal;
+    word-break: break-word;
+    border-bottom: none;
+  }
+  /* 年化配息率：放大突出 */
+  table.und-tbl td[data-label="年化配息率"] {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    background: #fafcff;
+    font-size: 15px;
+  }
+  /* 近6月配息：垂直排列（mini-table 展開） */
+  table.und-tbl td[data-label="近6月配息"] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+    text-align: left !important;
+  }
+  table.und-tbl td[data-label="近6月配息"]::before {
+    margin-right: 0;
+  }
+}
+/* ── RWD：寬螢幕小字（769–1100px，iPad 橫向等）── */
+@media (min-width: 769px) and (max-width: 1100px) {
+  table.und-tbl { font-size: 11.5px; }
+  table.und-tbl th, table.und-tbl td { padding: 7px 7px; }
+}
+/* ── Notices（免責聲明 + 重要事項合併）────────── */
+.und-notices {
+  margin-top: 14px;
+  background: #fffdf5;
+  border: 1px solid #fde68a;
+  border-left: 4px solid #f59e0b;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 14px 18px 16px;
+  font-size: 12px;
+  color: #6b4209;
+  line-height: 1.75;
+}
+.und-notices-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.und-notices-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #fde68a;
+}
+.und-notices-disclaimer {
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.und-notices-disclaimer strong { font-weight: 800; }
+.anm-note {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #78350f;
+}
+.anm-chip {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 3px;
+  font-size: 10.5px;
+  font-weight: 600;
+  margin: 0 2px;
+}
+.und-notices-divider {
+  margin: 12px 0 10px;
+  border: none;
+  border-top: 1px solid #fde68a;
+}
+.und-notices-legal-title {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  margin-bottom: 8px;
+}
+.und-notices ol {
+  margin: 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.und-notices ol li {
+  display: flex;
+  gap: 8px;
+  font-size: 11.5px;
+  color: #6b4209;
+  line-height: 1.65;
+}
+.und-notices ol li .note-num {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: #92400e;
+  font-size: 10.5px;
+  background: #fef3c7;
+  border-radius: 3px;
+  padding: 1px 5px;
+  height: fit-content;
+  margin-top: 1px;
+}
+/* ── Footer notice ───────────────────────────── */
+.und-footer {
+  margin-top: 16px;
+  padding: 14px 0 6px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.und-footer-left {
+  font-size: 11px;
+  color: #8fa0b4;
+}
+.und-footer-right {
+  font-size: 10.5px;
+  color: #aab8c8;
+}
+/* 舊版相容 */
+.und-notice {
+  text-align: center;
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-top: 14px;
+  padding-bottom: 8px;
+}
+/* ── Responsive ──────────────────────────────── */
+/* Tablet（≤1024px）*/
+@media (max-width: 1024px) {
+  .und-stats { grid-template-columns: repeat(3, 1fr); }
+  .fund-link { max-width: 200px; }
+}
+/* Tablet 中小（≤767px）*/
+@media (max-width: 767px) {
+  .und-main { padding: 12px 12px 60px; }
+  .und-header-inner { padding: 10px 14px 8px; gap: 10px; }
+  .und-title { font-size: 16px; }
+  .und-subtitle { display: none; }
+  .und-stats { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .und-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .und-filter-item { min-width: 0; }
+  .und-filter-item:first-child { grid-column: span 2; }
+  .und-filter-item input,
+  .und-filter-item select { width: 100%; }
+  .und-filter-item input#ffs { width: 100%; }
+  .und-reset-btn { width: 100%; margin-top: 0; }
+  table.und-tbl th { padding: 9px 7px; font-size: 10px; }
+  table.und-tbl td { padding: 6px 7px; }
+  .und-table-scroll { max-height: calc(100vh - 250px); }
+}
+/* Mobile（≤599px）*/
+@media (max-width: 599px) {
+  .und-main { padding: 10px 10px 60px; }
+  .und-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .und-stat { padding: 10px 12px 9px; }
+  .und-stat:last-child { grid-column: span 2; }
+  .und-stat-num { font-size: 19px; }
+  .und-header-inner { padding: 8px 12px 7px; }
+  .und-title { font-size: 14px; gap: 6px; }
+  .und-btn { padding: 6px 12px; font-size: 11px; }
+  .und-filter-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .und-filter-item { min-width: 0; }
+  .und-filter-item:first-child { grid-column: span 2; }
+  .und-filter-item input,
+  .und-filter-item select { width: 100%; }
+  .und-filter-item input#ffs { width: 100%; }
+  .und-reset-btn { width: 100%; margin-top: 0; }
+  table.und-tbl { font-size: 11px; }
+  table.und-tbl th { padding: 7px 5px; font-size: 9.5px; }
+  table.und-tbl td { padding: 5px 5px; }
+  .fund-link { max-width: 130px; font-size: 11px; }
+  .und-table-scroll { max-height: calc(100svh - 230px); }
+  .und-row-count { font-size: 10.5px; padding: 7px 12px; }
+  .und-footer { flex-direction: column; align-items: flex-start; gap: 3px; }
+  .und-footer-left, .und-footer-right { font-size: 10px; }
+}
+/* ── 回測按鈕 & Modal ─────────────────────────── */
+.bt-open-btn {
+  background: var(--blue-pale);
+  border: 1px solid #c3d8f5;
+  color: var(--blue);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, transform 0.1s;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.bt-open-btn:hover { background: #d7e6fc; }
+.bt-open-btn:active { transform: scale(0.95); }
+.bt-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,30,50,0.55);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+}
+.bt-overlay.show { opacity: 1; }
+.bt-modal {
+  background: var(--surface);
+  border-radius: 14px;
+  width: 100%;
+  max-width: 920px;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  transform: translateY(10px) scale(0.98);
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+.bt-overlay.show .bt-modal { transform: translateY(0) scale(1); opacity: 1; }
+.bt-modal-head {
+  position: sticky;
+  top: 0;
+  background: linear-gradient(135deg, #0f2744, var(--navy));
+  color: #fff;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-radius: 14px 14px 0 0;
+  z-index: 5;
+}
+.bt-modal-title { font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 7px; }
+.bt-close-btn {
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.3);
+  color: #fff;
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.1s;
+}
+.bt-close-btn:hover { background: rgba(255,255,255,0.26); }
+.bt-close-btn:active { transform: scale(0.92); }
+.bt-modal-body { padding: 18px 20px 24px; }
+.bt-loading { text-align: center; padding: 40px 0; color: var(--muted); font-size: 13px; }
+.bt-meta { font-size: 11.5px; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+.bt-cap-note {
+  font-size: 11px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 7px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+.bt-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin: 14px 0 18px;
+}
+.bt-stat {
+  background: #f7fafd;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 9px 10px;
+}
+.bt-stat-label { font-size: 10px; color: var(--muted); font-weight: 700; margin-bottom: 3px; }
+.bt-stat-val { font-size: 14px; font-weight: 800; color: var(--navy); font-family: 'Courier New',monospace; }
+.bt-section-title { font-size: 12.5px; font-weight: 800; color: var(--navy); margin: 16px 0 10px; display: flex; align-items: center; gap: 6px; }
+@keyframes bt-fade-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+#bt-main > *, #bt-winrate > * { animation: bt-fade-in 0.22s ease; }
+.wr-bars { display: flex; flex-direction: column; gap: 8px; }
+.wr-row { display: flex; align-items: center; gap: 10px; font-size: 11.5px; }
+.wr-label { width: 44px; flex-shrink: 0; color: var(--muted); font-weight: 700; }
+.wr-track { flex: 1; height: 14px; background: #eef2f8; border-radius: 7px; overflow: hidden; }
+.wr-fill { height: 100%; border-radius: 7px; transition: width 0.3s; }
+.wr-pct { width: 48px; flex-shrink: 0; text-align: right; font-weight: 800; color: var(--text); font-family: 'Courier New',monospace; }
+.bt-wr-note { font-size: 10.5px; color: #b0b8c4; margin-top: 8px; }
+/* 還原(含息)模式切換 */
+.bt-mode-toggle { display: flex; gap: 6px; margin-bottom: 4px; }
+.bt-mode-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: #f7fafd;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 7px 8px;
+  border-radius: 7px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bt-mode-btn:hover:not(.active) { background: #eef2f8; }
+.bt-mode-btn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+/* 回測區間切換（全部／3年／4年／5年／自訂） */
+.bt-range-toggle { display: flex; gap: 6px; margin-bottom: 14px; }
+.bt-range-btn {
+  flex: 1;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.bt-range-btn:hover:not(.active) { background: #f5f8fc; }
+.bt-range-btn.active { background: #eef2f8; color: var(--navy); border-color: var(--navy); }
+.bt-custom-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -6px 0 14px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.bt-custom-range input[type="date"] {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11.5px;
+  font-family: inherit;
+  color: var(--text);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bt-custom-range input[type="date"]:focus {
+  border-color: var(--blue-mid);
+  box-shadow: 0 0 0 3px rgba(59,130,196,0.12);
+}
+.bt-div-note {
+  font-size: 11px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+/* 賺錢機率：淨值 vs 加上配息後，單條雙色呈現 */
+.wr-legend { display: flex; gap: 16px; font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.wr-legend span { display: inline-flex; align-items: center; gap: 5px; }
+.wr-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.wr-row-dual { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; font-size: 11.5px; }
+.wr-track-dual { position: relative; flex: 1; height: 12px; background: #eef2f8; border-radius: 6px; }
+.wr-seg-raw { position: absolute; left: 0; top: 0; height: 100%; background: #dc2626; border-radius: 6px 0 0 6px; }
+.wr-seg-raw.wr-seg-full { border-radius: 6px; }
+.wr-seg-add { position: absolute; top: 0; height: 100%; background: #2657a0; border-radius: 0 6px 6px 0; }
+.wr-seg-add.wr-seg-full { border-radius: 6px; }
+.wr-pct-dual { width: 108px; flex-shrink: 0; text-align: right; font-weight: 800; color: var(--text); font-family: 'Courier New',monospace; font-size: 11px; }
+@media (max-width: 599px) {
+  .bt-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .bt-modal { max-width: 100%; }
+  .wr-label { width: 36px; font-size: 10.5px; }
+  .wr-pct-dual { width: 88px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+<!-- ═══════════════════════════════════════════════════════════
+     UND 配息率工具 Web 版
+     非官方工具，與富邦人壽無任何關聯
+     資料來源：invest.fubonlife.com.tw
+     ═══════════════════════════════════════════════════════════ -->
+<header class="und-header">
+  <div class="und-header-inner">
+    <div class="und-title-block">
+      <div class="und-title">
+        <svg class="i i-lg" viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg>
+        UND 配息率工具
+        <span class="und-title-badge">非官方</span>
+      </div>
+      <div class="und-subtitle">年化配息率 = 近6月月配平均 × 12 ÷ 當日淨值　｜　點基金名稱可開啟富邦官網頁面</div>
+    </div>
+    <button class="und-btn" onclick="startLoad(true)"><svg class="i" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> 載入配息資料</button>
+  </div>
+</header>
+<div class="und-main">
+  <!-- Stats Bar -->
+  <div class="und-stats">
+    <div class="und-stat">
+      <div class="und-stat-num" id="st0">—</div>
+      <div class="und-stat-label">總標的</div>
+    </div>
+    <div class="und-stat">
+      <div class="und-stat-num" id="st1">—</div>
+      <div class="und-stat-label">月配標的</div>
+    </div>
+    <div class="und-stat">
+      <div class="und-stat-num" id="st2">—</div>
+      <div class="und-stat-label">已算配息率</div>
+    </div>
+    <div class="und-stat">
+      <div class="und-stat-num" id="st3">—</div>
+      <div class="und-stat-label">目前顯示</div>
+    </div>
+    <div class="und-stat">
+      <div class="und-stat-num" id="st4" style="font-size:13px;line-height:1.4">—</div>
+      <div class="und-stat-label">最後更新</div>
+    </div>
+  </div>
+  <!-- Config Warning（PROXY_BASE 未設定時顯示） -->
+  <div class="und-config-warn" id="und-config-warn">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> <strong>尚未設定 Proxy URL！</strong>
+    請在此 HTML 原始碼中找到 <code>PROXY_BASE</code>，
+    替換為你部署好的 Vercel 網址。<br>
+    例如：<code>https://und-proxy.vercel.app/api/proxy</code><br>
+    如果你把這個檔案放在 Vercel 同一個 repo 裡，改成 <code>'/api/proxy'</code> 即可。
+  </div>
+  <!-- Progress -->
+  <div class="und-progress-wrap" id="und-prog">
+    <div class="und-progress-msg" id="und-prog-msg">初始化中...</div>
+    <div class="und-progress-track">
+      <div class="und-progress-bar" id="und-prog-bar"></div>
+    </div>
+  </div>
+  <!-- Error -->
+  <div class="und-error" id="und-err"></div>
+  <!-- Filter Panel -->
+  <div class="und-filter-panel" id="und-filter">
+    <div class="und-filter-row">
+      <div class="und-filter-item">
+        <label><svg class="i i-sm" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> 搜尋</label>
+        <input id="ffs" type="text" placeholder="名稱 / 代碼..." oninput="applyFilterDebounced()" autocomplete="off">
+      </div>
+      <div class="und-filter-item">
+        <label>標的類型</label>
+        <select id="fft" onchange="applyFilter()">
+          <option value="">全部</option>
+          <option>股票型</option>
+          <option>債券型</option>
+          <option>貨幣市場型</option>
+          <option>平衡型</option>
+          <option>多重資產型</option>
+          <option>組合型</option>
+          <option>指數股票型(ETF)</option>
+          <option>全權委託投資帳戶</option>
+        </select>
+      </div>
+      <div class="und-filter-item">
+        <label>幣別</label>
+        <select id="ffc" onchange="applyFilter()">
+          <option value="">全部</option>
+          <option>美元</option>
+          <option>台幣</option>
+          <option>澳幣</option>
+          <option>紐幣</option>
+          <option>歐元</option>
+          <option>南非幣</option>
+          <option>日圓</option>
+        </select>
+      </div>
+      <div class="und-filter-item">
+        <label>風險等級</label>
+        <select id="ffrr" onchange="applyFilter()">
+          <option value="">全部</option>
+          <option>RR1</option><option>RR2</option><option>RR3</option><option>RR4</option><option>RR5</option>
+        </select>
+      </div>
+      <div class="und-filter-item">
+        <label>配息頻率</label>
+        <select id="fff" onchange="applyFilter()">
+          <option value="">全部</option>
+          <option>月配</option>
+          <option>季配</option>
+          <option>半年配</option>
+          <option>年配</option>
+          <option>無</option>
+        </select>
+      </div>
+      <div class="und-filter-item">
+        <label>最低配息率(%)</label>
+        <input id="ffr" type="number" placeholder="例: 5" min="0" max="99" step="0.5" oninput="applyFilterDebounced()">
+      </div>
+      <div class="und-filter-item">
+        <label>&nbsp;</label>
+        <button class="und-reset-btn" onclick="resetFilter()"><svg class="i" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> 重設</button>
+      </div>
+    </div>
+    <!-- 手機專用排序列（桌機 display:none，手機 display:flex） -->
+    <div class="und-mobile-sort">
+      <div class="und-filter-item">
+        <label>排序依據</label>
+        <select id="ms-col" onchange="mobileSort()">
+          <option value="-1">預設</option>
+          <option value="4">年化配息率</option>
+          <option value="5">六個月報酬率</option>
+          <option value="6">一年報酬率</option>
+          <option value="7">三年報酬率</option>
+          <option value="3">當日淨值</option>
+          <option value="0">基金名稱（A→Z）</option>
+          <option value="2">幣別</option>
+          <option value="11">標的類型</option>
+        </select>
+      </div>
+      <div class="und-filter-item">
+        <label>排序方向</label>
+        <select id="ms-dir" onchange="mobileSort()">
+          <option value="-1">高 → 低</option>
+          <option value="1">低 → 高</option>
+        </select>
+      </div>
+    </div>
+  </div>
+  <!-- Table -->
+  <div class="und-table-wrap" id="und-table">
+    <div class="und-row-count" id="und-rowcnt"></div>
+    <div class="und-table-scroll">
+      <table class="und-tbl">
+        <thead>
+          <tr>
+            <th onclick="sortBy(0)">基金名稱 <svg class="i i-sm" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg></th>
+            <th onclick="sortBy(1)">代碼</th>
+            <th onclick="sortBy(2)">幣別</th>
+            <th onclick="sortBy(3)" class="r">當日淨值</th>
+            <th onclick="sortBy(4)" class="r">年化配息率<span class="th-sub">近6月均×12÷淨值</span></th>
+            <th onclick="sortBy(5)" class="r">六個月<span class="th-sub">報酬率(%)</span></th>
+            <th onclick="sortBy(6)" class="r">一年<span class="th-sub">報酬率(%)</span></th>
+            <th onclick="sortBy(7)" class="r">三年<span class="th-sub">報酬率(%)</span></th>
+            <th onclick="sortBy(8)">近6月配息</th>
+            <th onclick="sortBy(9)" class="c">頻率</th>
+            <th onclick="sortBy(10)" class="c">風險</th>
+            <th onclick="sortBy(11)">標的類型</th>
+            <th class="c">分析</th>
+          </tr>
+        </thead>
+        <tbody id="und-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+  <!-- Notices：免責聲明 + 重要事項（合併） -->
+  <div class="und-notices">
+    <div class="und-notices-title"><svg class="i i-sm" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 免責聲明</div>
+    <div class="und-notices-disclaimer">
+      <strong>配息率僅供參考，過去配息率不代表未來，配息來源可能為本金。</strong>請以各基金公司官方公告為準。報酬率資料取自富邦投資型保險專區，以基金淨值計算。
+    </div>
+    <div class="anm-note">
+      近6月配息欄異常標示：
+      <span class="anm-chip" style="background:#fef2f2;color:#dc2626">紅底</span> = 較前月增加 10% 以上（警示）
+      &nbsp;
+      <span class="anm-chip" style="background:#f0fdf4;color:#16a34a">綠底</span> = 較前月減少 10% 以上（注意）
+      &nbsp;｜&nbsp; <svg class="i i-sm" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> 符號 = 配息率 ≥ 8%，請特別留意是否配息來源為本金
+    </div>
+    <hr class="und-notices-divider">
+    <div class="und-notices-legal-title">重要事項說明</div>
+    <ol>
+      <li>
+        <span class="note-num">註1</span>
+        <span>績效計算為原幣別報酬，且皆有考慮配息情況。基金配息率不代表基金報酬率，且過去配息率不代表未來配息率。所有基金績效，均為過去績效，不代表未來之績效表現，亦不保證基金之最低投資收益。</span>
+      </li>
+      <li>
+        <span class="note-num">註2</span>
+        <span>基金淨值可能因市場因素而上下波動，基金淨值僅供參考，實際以基金公司公告之淨值為準；海外市場指數類型基金，以交易日當天收盤價為淨值參考價；部份基金採雙軌報價，實際交易以基金公司所公告的買回價／賣出價為計算基礎。</span>
+      </li>
+      <li>
+        <span class="note-num">註3</span>
+        <span>有關基金應負擔之費用（含分銷費用）已揭露於基金之公開說明書及投資人須知中，投資人可至境外基金資訊觀測站（<a href="http://www.fundclear.com.tw" target="_blank" style="color:#92400e">www.fundclear.com.tw</a>）下載，或逕向總代理人網站查閱。</span>
+      </li>
+      <li>
+        <span class="note-num">註4</span>
+        <span>「分析」功能之逐日淨值資料：可取得自基金成立日起算之全部歷史資料（全權委託投資帳戶（D型）不提供分析）。可選擇「全部／3年／4年／5年／自訂」分析區間（自訂可任意指定起訖日期），重新計算對應期間之走勢圖、統計數字與賺錢機率。有配息之標的，系統會額外抓取其歷史配息記錄：上方走勢圖與統計數字可切換顯示「淨值（未還原）」或還原為「含息總報酬」序列（假設配息發生於當月最後一個交易日、按當時淨值滾入計算，含再投資複利效果）；下方「賺錢機率」則改以單一長條呈現紅（淨值漲跌）與藍（加上配息後）雙色比較，加上配息後之數字採「期末淨值－期初淨值＋期間內配息金額」簡單加總計算，不含配息再投資之複利效果，故與上方還原(含息)圖表之計算方式不同。配息資料僅精確至月份，故上述還原與加總結果與真實除息日可能有些微誤差，僅供參考。賺錢機率採滾動視窗計算，樣本不足（少於10個視窗）之持有期間將自動隱藏；夏普比率計算假設無風險利率為 0%，僅供參考，不構成投資建議。</span>
+      </li>
+    </ol>
+  </div>
+  <!-- Footer -->
+  <div class="und-footer">
+    <div class="und-footer-left">
+      本工具為非官方工具，與富邦人壽保險股份有限公司無任何關聯
+    </div>
+    <div class="und-footer-right">
+      資料來源：invest.fubonlife.com.tw
+    </div>
+  </div>
+</div><!-- /.und-main -->
+<!-- 回測 Modal -->
+<div class="bt-overlay" id="bt-overlay" onclick="if(event.target===this) closeBacktest();">
+  <div class="bt-modal">
+    <div class="bt-modal-head">
+      <div class="bt-modal-title" id="bt-title"><svg class="i i-lg" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> 分析</div>
+      <button class="bt-close-btn" onclick="closeBacktest()"><svg class="i" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="bt-modal-body" id="bt-body"></div>
+  </div>
+</div>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   UND 配息率工具 — Web 版前端邏輯
+   從 bookmarklet 版本改寫，主要差異：
+   1. fetchBig5() 改透過 CORS Proxy 呼叫
+   2. getFundUrl() 改回傳絕對 URL
+   3. 自動在頁面載入時執行（不需要在富邦網站上）
+   ═══════════════════════════════════════════════════════════ */
+// ─────────────────────────────────────────────────────────
+// ⚙️  設定區（部署後請更新此處）
+// ─────────────────────────────────────────────────────────
+// 如果這個 index.html 跟 api/proxy.js 在同一個 Vercel repo：
+const PROXY_BASE = '/api/proxy';
+// 如果你是把這個 HTML 貼入 WordPress（不同 domain），
+// 請改成你的 Vercel 完整網址：
+// const PROXY_BASE = 'https://YOUR-APP.vercel.app/api/proxy';
+const FUBON_BASE = 'https://invest.fubonlife.com.tw';
+// ─────────────────────────────────────────────────────────
+// DOM helpers
+const $  = id => document.getElementById(id);
+const eh = s  => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const ea = s  => String(s).replace(/"/g,'&quot;');
+// ─────────────────────────────────────────────────────────
+// Icon 圖示集（取代 Emoji，統一線性 SVG，stroke-width 一致）
+// ─────────────────────────────────────────────────────────
+const ICON = {
+  chart:   '<svg class="i" viewBox="0 0 24 24"><rect x="3" y="12" width="4" height="8" rx="1"/><rect x="10" y="6" width="4" height="14" rx="1"/><rect x="17" y="9" width="4" height="11" rx="1"/></svg>',
+  link:    '<svg class="i" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+  refresh: '<svg class="i" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>',
+  trendUp: '<svg class="i" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>',
+  warn:    '<svg class="i" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  warnSm:  '<svg class="i i-sm" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  error:   '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
+  zap:     '<svg class="i" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  list:    '<svg class="i" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>',
+  coin:    '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="18"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-2.5h-1A2.5 2.5 0 0 0 9 9.5c0 1.38 1.12 2.1 2.5 2.5l1 .29c1.38.39 2.5 1.1 2.5 2.4A2.5 2.5 0 0 1 12.5 17h-1A2.5 2.5 0 0 1 9 14.5"/></svg>',
+  loader:  '<svg class="i i-spin" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>'
+};
+function setProgress(msg, pct) {
+  $('und-prog-msg').innerHTML = msg;
+  if (pct !== undefined) $('und-prog-bar').style.width = pct + '%';
+}
+function showError(msg) {
+  const el = $('und-err');
+  el.innerHTML = ICON.error + ' <strong>錯誤：</strong>' + eh(msg) + '<br><small style="color:#b91c1c">請確認 PROXY_BASE 設定是否正確，或稍後再試。</small>';
+  el.style.display = 'block';
+  $('und-prog').style.display = 'none';
+}
+// ─────────────────────────────────────────────────────────
+// fetchBig5 via CORS Proxy
+// ─────────────────────────────────────────────────────────
+// /api/data bundle 的 base64 解碼（base64 → Uint8Array → BIG5 → UTF-8）
+function decodeB64Big5(b64) {
+  var bin = atob(b64);
+  var arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new TextDecoder('big5').decode(arr);
+}
+async function fetchBig5(path) {
+  const proxyUrl = PROXY_BASE + '?url=' + encodeURIComponent(path);
+  const r = await fetch(proxyUrl);
+  if (!r.ok) throw new Error('Proxy 回傳 ' + r.status + ' (' + path.split('?')[0] + ')');
+  const buf = await r.arrayBuffer();
+  return new TextDecoder('big5').decode(buf);
+}
+// ─────────────────────────────────────────────────────────
+// 業務邏輯（從 bookmarklet 移植）
+// ─────────────────────────────────────────────────────────
+// iShares：除息日 12/16 以後 → 歸入次年 1 月
+function normalizeDivMonth(dateStr) {
+  var m = dateStr.match(/(\d{4})\/(\d{2})\/(\d{2})/);
+  if (!m) return dateStr.substring(0, 7);
+  var yr = parseInt(m[1]), mo = parseInt(m[2]), day = parseInt(m[3]);
+  if (mo === 12 && day >= 16) return (yr + 1) + '/01';
+  return m[1] + '/' + m[2];
+}
+// 解析一般基金配息 HTML
+function parseDivHtml(html, isIShares) {
+  var doc = new DOMParser().parseFromString(html, 'text/html');
+  var result = [];
+  doc.querySelectorAll('table tr').forEach(function(row) {
+    var cells = row.querySelectorAll('td');
+    if (cells.length >= 5) {
+      var st = cells[3].textContent.trim();
+      var am = parseFloat(cells[4].textContent.trim());
+      var exDate = cells[0].textContent.trim();
+      var dt = cells[1].textContent.trim();
+      if ((st === '配息' || st === '撥回') && !isNaN(am) && am > 0) {
+        var useDate = isIShares ? normalizeDivMonth(exDate) : dt.substring(0, 7);
+        result.push({ date: useDate, amount: am });
+      }
+    }
+  });
+  return result;
+}
+// 解析 ETF 配息 JSON（V41=C）
+function parseEtfDivJson(jsonText, isIShares) {
+  try {
+    var data = JSON.parse(jsonText);
+    var rows = data.ResultSet.Result || [];
+    return rows.reduce(function(acc, r) {
+      var am = parseFloat(r.V4);
+      var dateStr = r.V1 || '';
+      if (!isNaN(am) && am > 0 && dateStr) {
+        var useDate = isIShares ? normalizeDivMonth(dateStr) : dateStr.substring(0, 7);
+        acc.push({ date: useDate, amount: am });
+      }
+      return acc;
+    }, []);
+  } catch(e) { return []; }
+}
+function isDiscretionary(f) { return f.V41 === 'D' || (f.V5 && f.V5.includes('全權委託')); }
+function isFubonETF(f)       { return f.V41 === 'C'; }
+function isISharesName(name) { return name && name.toLowerCase().includes('ishares'); }
+// 近6月配息（一般基金每月去重，ETF直接取6筆）
+function get6MonthDivs(divs, isETF) {
+  if (!divs || divs.length === 0) return [];
+  if (isETF) return divs.slice(0, 6);
+  var seen = {}, r = [];
+  for (var i = 0; i < divs.length; i++) {
+    var key = divs[i].date.substring(0, 7);
+    if (!seen[key]) { seen[key] = true; r.push(divs[i]); }
+    if (r.length >= 6) break;
+  }
+  return r;
+}
+// 計算年化配息率
+function calcRate(nav, r6) {
+  if (!r6 || r6.length === 0 || nav <= 0) return null;
+  var avg = r6.reduce(function(s, d) { return s + d.amount; }, 0) / r6.length;
+  return avg * 12 / nav * 100;
+}
+// 渲染近6月配息 mini table
+function renderDivDetail(divs) {
+  if (!divs || divs.length === 0) return '—';
+  var r6 = divs.slice(0, 6);
+  var trend = '';
+  if (r6.length >= 2) {
+    var f0 = r6[0].amount, fn = r6[r6.length - 1].amount;
+    trend = f0 > fn ? '<span class="trend t-up">▲</span>'
+          : f0 < fn ? '<span class="trend t-down">▼</span>'
+          :            '<span class="trend t-flat">─</span>';
+  }
+  var rows = r6.map(function(d, idx) {
+    var yyMM = typeof d.date === 'string' ? d.date.substring(2, 7) : d.date;
+    var amtStr = d.amount.toFixed(4);
+    var anomaly = '';
+    if (idx < r6.length - 1) {
+      var prev = r6[idx + 1].amount;
+      if (prev > 0) {
+        var chg = (d.amount - prev) / prev;
+        if (chg >= 0.10) anomaly = 'd-up';
+        else if (chg <= -0.10) anomaly = 'd-down';
+      }
+    }
+    var cls = 'd-amt' + (idx === 0 ? ' d-first' : '') + (anomaly ? ' ' + anomaly : '');
+    return '<tr><td class="d-date">' + yyMM + '</td><td class="' + cls + '">' + amtStr + '</td></tr>';
+  }).join('');
+  return '<div style="display:inline-flex;align-items:flex-start">'
+       + '<table class="div-tbl">' + rows + '</table>' + trend + '</div>';
+}
+// 取得基金頁面 URL（絕對路徑）
+function getFundUrl(f) {
+  if (f.V41 === 'B') return FUBON_BASE + '/w/wb/wb01.djhtm?a=' + f.V40;
+  if (f.V41 === 'A') return FUBON_BASE + '/w/wr/wr01.djhtm?a=' + f.V40;
+  if (f.V41 === 'C') return FUBON_BASE + '/ETFWeb/HTML/ET050000.DJHTM#ETFID=' + f.V40;
+  return null;
+}
+// ─────────────────────────────────────────────────────────
+// 累積報酬率 解析 & 抓取
+// ─────────────────────────────────────────────────────────
+function parseReturnRate(html) {
+  try {
+    var idx = html.indexOf('累積報酬率');
+    if (idx < 0) return null;
+    var tbodyStart = html.indexOf('<tbody', idx);
+    if (tbodyStart < 0) return null;
+    var tbodyEnd = html.indexOf('</tbody>', tbodyStart);
+    var tbodyHtml = html.substring(tbodyStart, tbodyEnd + 8);
+    var doc = new DOMParser().parseFromString('<table>' + tbodyHtml + '</table>', 'text/html');
+    var rows = doc.querySelectorAll('tbody tr');
+    if (!rows.length) return null;
+    function pv(td) { var n = parseFloat(td.textContent.trim().replace(/,/g, '')); return isNaN(n) ? null : n; }
+    // ETF格式（BR系列）：兩列（市價 + 淨值），取淨值列(rows[1])
+    // 欄位：[0]=項目,[1]=一日,[2]=一週,[3]=一個月,[4]=三個月,[5]=六個月,[6]=一年,[7]=二年,[8]=三年,[9]=五年
+    if (rows.length >= 2) {
+      var navTds = rows[1].querySelectorAll('td');
+      if (navTds.length >= 9) {
+        return { m6: pv(navTds[5]), y1: pv(navTds[6]), y3: pv(navTds[8]) };
+      }
+    }
+    var tds = rows[0].querySelectorAll('td');
+    // wb03（B型海外基金）多了「一週/本月/本季/九個月」4欄，proxy 回傳 12 cells
+    // 欄位：[0]=名稱,[1]=週,[2]=月,[3]=本月,[4]=季,[5]=3m,[6]=6m,[7]=9m,[8]=1y,[9]=2y,[10]=3y,[11]=5y
+    if (tds.length >= 11) {
+      return { m6: pv(tds[6]), y1: pv(tds[8]), y3: pv(tds[10]) };
+    }
+    // wr03（A型國內基金）proxy 回傳 8 cells
+    // 欄位：[0]=名稱,[1]=1m,[2]=3m,[3]=6m,[4]=1y,[5]=2y,[6]=3y,[7]=5y
+    if (tds.length >= 7) {
+      return { m6: pv(tds[3]), y1: pv(tds[4]), y3: pv(tds[6]) };
+    }
+    return null;
+  } catch(e) { return null; }
+}
+// 解析 ETF 績效 JSON（et030000json.djjson）
+// 資料欄位：V3=六個月, V4=九個月, V5=一年, V6=二年, V7=三年, V8=五年
+// Result 有兩列：[0]=市價, [1]=淨值；我們取 [1]=淨值
+function parseEtfReturnJson(text) {
+  try {
+    var data = JSON.parse(text);
+    var rows = data && data.ResultSet && data.ResultSet.Result;
+    if (!rows || rows.length < 2) return null;
+    var nav = rows[1]; // 淨值列
+    function pv(v) { var n = parseFloat((v || '').replace(/,/g, '')); return isNaN(n) ? null : n; }
+    return { m6: pv(nav.V3), y1: pv(nav.V5), y3: pv(nav.V7) };
+  } catch(e) { return null; }
+}
+async function fetchReturnRate(f) {
+  try {
+    var url;
+    if (f.V41 === 'A') url = '/w/wr/wr03_' + f.V40 + '.djhtm';
+    else if (f.V41 === 'B') url = '/w/wb/wb03_' + f.V40 + '.djhtm';
+    else if (f.V41 === 'C') {
+      // BR系列外股ETF（V40格式如 IVV~BR015）→ 用 wb03 格式（同 B 型海外基金）
+      // 富邦國內ETF（V40格式如 00662.TW~F0662）→ 用 ETF 績效 JSON
+      if (/~BR\d+$/.test(f.V40)) {
+        return parseReturnRate(await fetchBig5('/w/wb/wb03_' + f.V40 + '.djhtm'));
+      }
+      var jtext = await fetchBig5('/ETFData/djjson/et030000json.djjson?a=' + f.V40);
+      return parseEtfReturnJson(jtext);
+    }
+    else return null;
+    return parseReturnRate(await fetchBig5(url));
+  } catch(e) { return null; }
+}
+function retDispCell(v) {
+  if (v === null || v === undefined) return '<span class="ret-na">—</span>';
+  var cls = v >= 0 ? 'ret-pos' : 'ret-neg';
+  return '<b class="' + cls + '">' + (v >= 0 ? '+' : '') + v.toFixed(2) + '%</b>';
+}
+// 顏色 helpers
+function rrCls(rr) {
+  return { RR1: 'rr-1', RR2: 'rr-2', RR3: 'rr-3', RR4: 'rr-4', RR5: 'rr-5' }[rr] || '';
+}
+function rateCls(v) {
+  var n = parseFloat(v);
+  if (isNaN(n) || v === '') return 'rate-x';
+  return n >= 8 ? 'rate-h' : n >= 5 ? 'rate-m' : 'rate-l';
+}
+function freqBadge(freq) {
+  if (!freq || freq === '無') return '<span class="freq-none">無</span>';
+  return '<span class="freq-badge fb-' + freq + '">' + eh(freq) + '</span>';
+}
+// ─────────────────────────────────────────────────────────
+// Sort & Filter
+// ─────────────────────────────────────────────────────────
+var _sortCol = -1, _sortDir = 1;
+function sortBy(col, forceDir) {
+  var tbody = $('und-tbody');
+  if (!tbody) return;
+  var rows = Array.from(tbody.querySelectorAll('.vr'));
+  _sortDir = (forceDir !== undefined) ? forceDir : (_sortCol === col ? -_sortDir : 1);
+  _sortCol = col;
+  rows.sort(function(a, b) {
+    var av = (a.querySelectorAll('td')[col] || {}).textContent || '';
+    var bv = (b.querySelectorAll('td')[col] || {}).textContent || '';
+    av = av.trim(); bv = bv.trim();
+    var an = parseFloat(av.replace('%', '')), bn = parseFloat(bv.replace('%', ''));
+    return (!isNaN(an) && !isNaN(bn)) ? (an - bn) * _sortDir : av.localeCompare(bv, 'zh-TW') * _sortDir;
+  });
+  rows.forEach(function(r) { tbody.appendChild(r); });
+  var ths = document.querySelectorAll('table.und-tbl thead th');
+  ths.forEach(function(th, i) {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (i === col) th.classList.add(_sortDir > 0 ? 'sort-asc' : 'sort-desc');
+  });
+}
+// 手機排序（由 #ms-col / #ms-dir 觸發）
+function mobileSort() {
+  var col = parseInt(($('ms-col') || {}).value || '-1');
+  var dir = parseInt(($('ms-dir') || {}).value || '-1');
+  if (col < 0) { _sortCol = -1; _sortDir = 1; applyFilter(); return; }
+  sortBy(col, dir);
+}
+var _filterDebounceTimer = null;
+function applyFilterDebounced() {
+  clearTimeout(_filterDebounceTimer);
+  _filterDebounceTimer = setTimeout(applyFilter, 200);
+}
+function applyFilter() {
+  var s  = ($('ffs')  || {}).value || '';
+  var t  = ($('fft')  || {}).value || '';
+  var c  = ($('ffc')  || {}).value || '';
+  var rr = ($('ffrr') || {}).value || '';
+  var f  = ($('fff')  || {}).value || '';
+  var mr = parseFloat(($('ffr') || {}).value) || 0;
+  var vis = 0;
+  document.querySelectorAll('.vr').forEach(function(row) {
+    var ok = (!s  || (row.dataset.n + row.dataset.c).includes(s.toLowerCase()))
+          && (!t  || row.dataset.t  === t)
+          && (!c  || row.dataset.cur === c)
+          && (!rr || row.dataset.rr  === rr)
+          && (!f  || row.dataset.f   === f)
+          && (!mr || parseFloat(row.dataset.r) >= mr);
+    row.style.display = ok ? '' : 'none';
+    if (ok) vis++;
+  });
+  var total = document.querySelectorAll('.vr').length;
+  $('und-rowcnt').textContent = '顯示 ' + vis + ' 筆 ／ 共 ' + total + ' 筆';
+  $('st3').textContent = vis;
+}
+function resetFilter() {
+  ['ffs','fft','ffc','ffrr','fff','ffr'].forEach(function(id) {
+    var el = $(id); if (el) el.value = '';
+  });
+  // 重設手機排序
+  var msc = $('ms-col'); if (msc) msc.value = '-1';
+  var msd = $('ms-dir'); if (msd) msd.value = '-1';
+  _sortCol = -1; _sortDir = 1;
+  document.querySelectorAll('table.und-tbl thead th').forEach(function(th) {
+    th.classList.remove('sort-asc', 'sort-desc');
+  });
+  applyFilter();
+}
+// ─────────────────────────────────────────────────────────
+// 表格列渲染（抽出為獨立函式，供快取路徑重用）
+// ─────────────────────────────────────────────────────────
+function renderRow(r, idx) {
+  // 配息率欄
+  var rateDisp;
+  if (r.freq === '月配' && !r.isDisc) {
+    if (r.rate) {
+      var warn = parseFloat(r.rate) >= 8 ? ' ' + ICON.warnSm : '';
+      rateDisp = '<b class="' + rateCls(r.rate) + '">' + r.rate + '%' + warn + '</b>';
+    } else {
+      rateDisp = '<span class="rate-x">—</span>';
+    }
+  } else {
+    rateDisp = '<span class="rate-x">—</span>';
+  }
+  // 基金名稱欄
+  var nameCell = r.url
+    ? '<a href="' + r.url + '" target="_blank" rel="noopener noreferrer" class="fund-link" title="開啟富邦官網頁面">' + eh(r.name) + '</a>'
+    : eh(r.name);
+  // 近6月配息欄
+  var divDisp = (r.freq === '月配' && !r.isDisc) ? renderDivDetail(r.divs) : '—';
+  return '<tr class="vr"'
+    + ' data-n="' + ea(r.name.toLowerCase()) + '"'
+    + ' data-c="' + ea(r.code.toLowerCase()) + '"'
+    + ' data-t="' + ea(r.type) + '"'
+    + ' data-cur="' + ea(r.cur) + '"'
+    + ' data-rr="' + ea(r.rr) + '"'
+    + ' data-f="' + ea(r.freq) + '"'
+    + ' data-r="' + r.rn + '">'
+    + '<td data-label="基金名稱" style="max-width:230px;word-break:break-word;line-height:1.45">' + nameCell + '</td>'
+    + '<td data-label="代碼" style="font-family:monospace;color:#6b7a8d;white-space:nowrap;font-size:12px">' + eh(r.code) + '</td>'
+    + '<td data-label="幣別" style="white-space:nowrap;font-size:12px">' + eh(r.cur) + '</td>'
+    + '<td data-label="當日淨值" class="r" style="font-family:monospace;font-size:12px">' + (r.nav || '—') + '</td>'
+    + '<td data-label="年化配息率" class="r" style="min-width:90px">' + rateDisp + '</td>'
+    + '<td data-label="六個月報酬" class="r" style="min-width:75px;white-space:nowrap">' + retDispCell(r.ret6m) + '</td>'
+    + '<td data-label="一年報酬" class="r" style="min-width:75px;white-space:nowrap">' + retDispCell(r.ret1y) + '</td>'
+    + '<td data-label="三年報酬" class="r" style="min-width:75px;white-space:nowrap">' + retDispCell(r.ret3y) + '</td>'
+    + '<td data-label="近6月配息" style="min-width:105px">' + divDisp + '</td>'
+    + '<td data-label="配息頻率" class="c">' + freqBadge(r.freq) + '</td>'
+    + '<td data-label="風險" class="c"><b class="' + rrCls(r.rr) + '">' + eh(r.rr) + '</b></td>'
+    + '<td data-label="標的類型" style="white-space:nowrap;font-size:12px;color:#374151">' + eh(r.type) + '</td>'
+    + '<td data-label="分析" class="c">' + btButtonCell(r, idx) + '</td>'
+    + '</tr>';
+}
+// 回測按鈕（僅 A/B/C 型支援，D 型全權委託顯示「不支援」）
+function btButtonCell(r, idx) {
+  if (!r.v41 || r.v41 === 'D' || !r.v40) {
+    return '<span style="color:#c3cdd9;font-size:11px">不支援</span>';
+  }
+  return '<button class="bt-open-btn" onclick="openBacktest(' + idx + ')">' + ICON.trendUp + ' 分析</button>';
+}
+// ─────────────────────────────────────────────────────────
+// localStorage 快取（每日台灣中午 12 點更新）
+// ─────────────────────────────────────────────────────────
+var CACHE_KEY = 'und-v2';
+function nextNoonTW() {
+  // 台灣時間 = UTC+8；中午 12:00 TW = UTC 04:00
+  var now = new Date();
+  var candidate = new Date(now);
+  candidate.setUTCHours(4, 0, 0, 0);   // 今天 UTC 04:00 = TW 12:00
+  if (candidate <= now) candidate.setUTCDate(candidate.getUTCDate() + 1); // 已過則改明天
+  return candidate.getTime();
+}
+function loadCache() {
+  try {
+    var raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    var obj = JSON.parse(raw);
+    if (!obj || !obj.expiry || Date.now() > obj.expiry) return null; // 已過期
+    return obj;
+  } catch(e) { return null; }
+}
+function saveCache(data) {
+  try {
+    data.expiry = nextNoonTW();
+    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+  } catch(e) { /* 容量不足時靜默失敗 */ }
+}
+// ─────────────────────────────────────────────────────────
+// 主流程
+// ─────────────────────────────────────────────────────────
+async function startLoad(forceRefresh) {
+  // 檢查 PROXY_BASE 是否還沒設定
+  if (PROXY_BASE.includes('YOUR-APP')) {
+    $('und-config-warn').style.display = 'block';
+    $('und-prog').style.display = 'none';
+    return;
+  }
+  $('und-config-warn').style.display = 'none';
+  $('und-err').style.display = 'none';
+  // ── 讀快取（非強制刷新時）────────────────────────────────
+  if (!forceRefresh) {
+    var cached = loadCache();
+    if (cached) {
+      // 直接從快取渲染，跳過所有 API 呼叫
+      $('und-filter').style.display = 'none';
+      $('und-table').style.display = 'none';
+      $('und-prog').style.display = 'block';
+      $('und-prog-bar').style.width = '0%';
+      $('und-tbody').innerHTML = '';
+      ['st0','st1','st2','st3','st4'].forEach(function(id) { $(id).textContent = '—'; });
+      setProgress(ICON.zap + ' 讀取快取資料...', 80);
+      try {
+        $('st0').textContent = cached.totalFunds || '—';
+        $('st1').textContent = cached.monthlyCount || '—';
+        var cacheReport = cached.report;
+        var cacheRated = cacheReport.filter(function(r) { return r.rate; }).length;
+        $('st2').textContent = cacheRated;
+        $('st4').innerHTML = cached.savedAt + ' ' + ICON.zap + '快取';
+        setProgress(ICON.zap + ' 讀取快取資料...', 95);
+        window.UND_ROWS = cacheReport;
+        $('und-tbody').innerHTML = cacheReport.map(function(r,i){ return renderRow(r,i); }).join('');
+        $('und-prog').style.display = 'none';
+        $('und-filter').style.display = 'block';
+        $('und-table').style.display = 'block';
+        applyFilter();
+        return; // 直接結束，不再 fetch
+      } catch(e) {
+        // 快取渲染失敗，繼續正常載入
+      }
+    }
+  }
+  $('und-filter').style.display = 'none';
+  $('und-table').style.display = 'none';
+  $('und-prog').style.display = 'block';
+  $('und-prog-bar').style.width = '0%';
+  $('und-tbody').innerHTML = '';
+  ['st0','st1','st2','st3','st4'].forEach(function(id) { $(id).textContent = '—'; });
+  try {
+    // ── 嘗試後端快速路徑 /api/data（CDN 12h 快取，跨裝置共享）──────
+    var _srvBundle = null;
+    if (!forceRefresh) {
+      try {
+        setProgress(ICON.link + ' 連線中...', 2);
+        var _srvR = await fetch('/api/data', { signal: AbortSignal.timeout(50000) });
+        if (_srvR.ok) {
+          var _srvB = await _srvR.json();
+          if (_srvB && _srvB.fundList && _srvB.rrList && !_srvB.error) {
+            _srvBundle = _srvB;
+          }
+        }
+      } catch(_srvE) { /* 後端不可用，繼續走逐一呼叫 */ }
+    }
+    // ① 基金清單 + 績效報酬率
+    setProgress(ICON.list + ' 取得基金清單與報酬率...', 5);
+    var text, rrText;
+    if (_srvBundle) {
+      // 從伺服器 bundle 解碼（毫秒完成，已含 CDN 快取）
+      text   = decodeB64Big5(_srvBundle.fundList);
+      rrText = decodeB64Big5(_srvBundle.rrList);
+    } else {
+      var _fl = await Promise.all([
+        fetchBig5('/w/custom/djjson/SearchProductJSON.djjson?m=0&P=UND&Change=1'),
+        fetchBig5('/w/custom/djjson/SearchProductJSON.djjson?P1=fubonlif&P2=False&P3=False&P4=0&P5=0&M=1&P=UND&CHANGE=1')
+      ]);
+      text = _fl[0]; rrText = _fl[1];
+    }
+    var funds = JSON.parse(text).ResultSet.Result;
+    var monthly = funds.filter(function(f) { return f.V42 === '月配' && !isDiscretionary(f); });
+    // 從績效版 JSON 建立報酬率 Map（V12=六個月, V13=一年, V15=三年）
+    var rrMap = {};
+    try {
+      var rrRows = JSON.parse(rrText).ResultSet.Result;
+      rrRows.forEach(function(r) {
+        var m6 = parseFloat(r.V12), y1 = parseFloat(r.V13), y3 = parseFloat(r.V15);
+        rrMap[r.V40] = {
+          m6: isNaN(m6) ? null : m6,
+          y1: isNaN(y1) ? null : y1,
+          y3: isNaN(y3) ? null : y3
+        };
+      });
+    } catch(e) { /* 報酬率解析失敗不中斷主流程 */ }
+    $('st0').textContent = funds.length;
+    $('st1').textContent = monthly.length;
+    // ② 取得月配基金的配息記錄
+    var divMap = {};
+    if (_srvBundle && !_srvBundle.partialOnly && _srvBundle.divData) {
+      // ── 伺服器快路徑：直接解碼 bundle 內的配息資料 ──────────
+      setProgress(ICON.zap + ' 從伺服器解析配息資料...', 50);
+      monthly.forEach(function(f) {
+        var entry = _srvBundle.divData[f.V40];
+        if (!entry || !entry.data) return;
+        try {
+          var isISh = isISharesName(f.V3);
+          var rawText = decodeB64Big5(entry.data);
+          var divs = entry.type === 'C'
+            ? parseEtfDivJson(rawText, isISh)
+            : parseDivHtml(rawText, isISh);
+          divMap[f.V40] = { divs: divs, isETF: entry.type === 'C' };
+        } catch(e) { /* 個別基金解析失敗不中斷 */ }
+      });
+    } else {
+      // ── 逐批抓取（個別呼叫，原始路徑）──────────────────────
+      var BS = 5;
+      for (var i = 0; i < monthly.length; i += BS) {
+        var batch = monthly.slice(i, i + BS);
+        var pct = 10 + Math.round((Math.min(i + BS, monthly.length)) / monthly.length * 75);
+        setProgress(ICON.trendUp + ' 抓取配息記錄 ' + Math.min(i + BS, monthly.length) + ' / ' + monthly.length + '...', pct);
+        await Promise.all(batch.map(async function(f) {
+          try {
+            var isISh  = isISharesName(f.V3);
+            var isETF  = isFubonETF(f);
+            var divs   = [];
+            if (isETF) {
+              var jtext = await fetchBig5('/ETFData/djjson/et050000json.djjson?a=' + f.V40);
+              divs = parseEtfDivJson(jtext, isISh);
+            } else {
+              var url = f.V41 === 'B' ? '/w/wb/wb05.djhtm?a=' + f.V40
+                      : f.V41 === 'A' ? '/w/wr/wr10.djhtm?a=' + f.V40 : null;
+              if (!url) return;
+              divs = parseDivHtml(await fetchBig5(url), isISh);
+            }
+            divMap[f.V40] = { divs: divs, isETF: isETF };
+          } catch(e) { /* 個別基金失敗不中斷整體流程 */ }
+        }));
+        await new Promise(function(r) { setTimeout(r, 200); }); // 限流
+      }
+    }
+    // ④ 整合報表（rrMap 已在步驟①建立，不再逐筆請求）
+    setProgress(ICON.chart + ' 整合資料...', 88);
+    var report = funds.map(function(f) {
+      var name     = f.V3.replace(/<[^>]+>/g, '').trim();
+      var nav      = parseFloat(f.V18) || 0;
+      var fundUrl  = getFundUrl(f);
+      var isDisc   = isDiscretionary(f);
+      var isETF    = isFubonETF(f);
+      var rrEntry = rrMap[f.V40] || null;
+      var row = {
+        name: name, code: f.V47 || '', type: (f.V5 || '').replace(/<[^>]+>/g, '').trim(),
+        cur: f.V26 || '', rr: f.V28 || '', freq: f.V42 || '無',
+        nav: nav, rate: '', divs: null, rn: 0, url: fundUrl, isDisc: isDisc,
+        ret6m: rrEntry ? rrEntry.m6 : null,
+        ret1y:  rrEntry ? rrEntry.y1 : null,
+        ret3y:  rrEntry ? rrEntry.y3 : null,
+        v40: f.V40 || '', v41: f.V41 || ''
+      };
+      if (f.V42 === '月配' && !isDisc) {
+        var entry   = divMap[f.V40];
+        var rawDivs = entry ? entry.divs : null;
+        if (rawDivs && rawDivs.length > 0) {
+          var r6   = get6MonthDivs(rawDivs, isETF);
+          var rate = calcRate(nav, r6);
+          row.rate = rate !== null ? rate.toFixed(2) : '';
+          row.divs = r6;
+          row.rn   = rate || 0;
+        }
+      }
+      return row;
+    });
+    var rated = report.filter(function(r) { return r.rate; }).length;
+    var nowStr = new Date().toLocaleString('zh-TW', {
+      month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
+    });
+    $('st2').textContent = rated;
+    $('st4').textContent = nowStr;
+    // 💾 存入快取
+    saveCache({
+      report: report,
+      totalFunds: funds.length,
+      monthlyCount: monthly.length,
+      savedAt: nowStr
+    });
+    // ④ 渲染表格
+    window.UND_ROWS = report;
+    $('und-tbody').innerHTML = report.map(function(r,i){ return renderRow(r,i); }).join('');
+    // ⑤ 顯示介面
+    $('und-prog').style.display = 'none';
+    $('und-filter').style.display = 'block';
+    $('und-table').style.display = 'block';
+    applyFilter();
+  } catch(e) {
+    showError(e.message);
+  }
+}
+// ─────────────────────────────────────────────────────────
+// 回測功能：逐日淨值抓取、統計計算、賺錢機率
+// ─────────────────────────────────────────────────────────
+function isoDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+// 解析 djbcd 純文字回應：第一段=逗號分隔日期(YYYYMMDD)，第二段=逗號分隔淨值（ETF 可能多第三段市價，忽略）
+function parseNavSeries(text) {
+  if (!text) return { dates: [], navs: [] };
+  var parts = text.trim().split(/\s+/);
+  if (parts.length < 2) return { dates: [], navs: [] };
+  var rawDates = parts[0].split(',');
+  var rawNavs  = parts[1].split(',');
+  var dates = [], navs = [];
+  for (var i = 0; i < rawDates.length && i < rawNavs.length; i++) {
+    var ds = rawDates[i].trim();
+    var ns = parseFloat(rawNavs[i]);
+    if (ds.length === 8 && !isNaN(ns) && ns > 0) {
+      dates.push(ds.substring(0, 4) + '-' + ds.substring(4, 6) + '-' + ds.substring(6, 8));
+      navs.push(ns);
+    }
+  }
+  return { dates: dates, navs: navs };
+}
+// 依基金類型抓取最長可得的逐日淨值序列
+// 三種類型皆改用「自訂日期區間」參數（b=0&c=起&d=訖），請求極早起始日以取得自基金成立日起算之全部歷史
+// （b=7&c=1&d=1 為官網預設五年區間參數，會被伺服器硬性裁切為 5 年，故改用自訂區間參數繞過此限制）
+async function fetchDailyNav(f) {
+  var end = isoDate(new Date());
+  var earlyStart = '1990-01-01';
+  if (f.v41 === 'C') {
+    var ticker = (f.v40 || '').split('~')[0];
+    if (!ticker) return { dates: [], navs: [] };
+    var path = '/ETFData/bcd/eBCDNavMktList.djbcd?P1=FUBONLIF&P2=&P3=True&P4=True&P5=True&a=' + encodeURIComponent(ticker) + '&B=2000-01-01&C=' + end;
+    return parseNavSeries(await fetchBig5(path));
+  } else if (f.v41 === 'B') {
+    var tickerB = (f.v40 || '').split('-')[0];
+    if (!tickerB) return { dates: [], navs: [] };
+    var pathB = '/w/bcd/BCDNavList.djbcd?a=' + encodeURIComponent(tickerB) + '&b=0&c=' + earlyStart + '&d=' + end;
+    return parseNavSeries(await fetchBig5(pathB));
+  } else if (f.v41 === 'A') {
+    var tickerA = (f.v40 || '').split('-')[0];
+    if (!tickerA) return { dates: [], navs: [] };
+    var pathA = '/w/bcd/tBCDNavList.djbcd?a=' + encodeURIComponent(tickerA) + '&b=0&c=' + earlyStart + '&d=' + end;
+    return parseNavSeries(await fetchBig5(pathA));
+  }
+  return { dates: [], navs: [] };
+}
+// 期間統計：期間報酬／年化報酬／年化波動度／夏普比率／最大回撤／期間最高／期間最低／目前淨值
+function computeStats(dates, navs) {
+  var n = navs.length;
+  if (n < 2) return null;
+  var first = navs[0], last = navs[n - 1];
+  var totalRet = (last / first - 1) * 100;
+  var d0 = new Date(dates[0]), d1 = new Date(dates[n - 1]);
+  var years = Math.max((d1 - d0) / (365.25 * 24 * 3600 * 1000), 1 / 365);
+  var cagr = (Math.pow(last / first, 1 / years) - 1) * 100;
+  var rets = [];
+  for (var i = 1; i < n; i++) {
+    if (navs[i - 1] > 0) rets.push(navs[i] / navs[i - 1] - 1);
+  }
+  var meanR = rets.length ? rets.reduce(function(s, v) { return s + v; }, 0) / rets.length : 0;
+  var variance = rets.length ? rets.reduce(function(s, v) { return s + Math.pow(v - meanR, 2); }, 0) / rets.length : 0;
+  var annVol = Math.sqrt(variance) * Math.sqrt(252) * 100;
+  var sharpe = annVol > 0 ? (cagr / annVol) : null;
+  var peak = navs[0], maxDd = 0;
+  for (var j = 0; j < n; j++) {
+    if (navs[j] > peak) peak = navs[j];
+    var dd = (navs[j] - peak) / peak;
+    if (dd < maxDd) maxDd = dd;
+  }
+  return {
+    totalRet: totalRet, cagr: cagr, annVol: annVol, sharpe: sharpe,
+    mdd: maxDd * 100, high: Math.max.apply(null, navs), low: Math.min.apply(null, navs),
+    cur: last, years: years, n: n, startDate: dates[0], endDate: dates[n - 1]
+  };
+}
+// 賺錢機率（滾動視窗勝率）：依持有期間（交易日）分桶，樣本不足(<10)自動跳過
+var WIN_BUCKETS = [
+  { label: '1年',   days: 252 },
+  { label: '2年',   days: 504 },
+  { label: '3年',   days: 756 },
+  { label: '4年',   days: 1008 },
+  { label: '5年',   days: 1260 },
+  { label: '7年',   days: 1764 },
+  { label: '10年',  days: 2520 }
+];
+function computeWinRates(navs) {
+  var n = navs.length, out = [];
+  WIN_BUCKETS.forEach(function(b) {
+    var windows = n - b.days;
+    if (windows < 10) return;
+    var wins = 0;
+    for (var i = 0; i < windows; i++) {
+      if (navs[i + b.days] > navs[i]) wins++;
+    }
+    out.push({ label: b.label, winRate: wins / windows * 100, samples: windows });
+  });
+  return out;
+}
+// 賺錢機率（單色 vs 雙色）：紅＝淨值（未還原）價格漲跌，藍＝「期末淨值－期初淨值＋期間內配息金額」(不含配息再投資複利效果)
+// divCum[i] = 截至第 i 個交易日（含）為止之累計配息金額；divCum[end]-divCum[start] = 該持有期間內實際收到之配息總額
+function computeWinRatesDual(navs, divCum) {
+  var n = navs.length, out = [];
+  WIN_BUCKETS.forEach(function(b) {
+    var windows = n - b.days;
+    if (windows < 10) return;
+    var rawWins = 0, addWins = 0;
+    for (var i = 0; i < windows; i++) {
+      var navStart = navs[i], navEnd = navs[i + b.days];
+      if (navEnd > navStart) rawWins++;
+      var divInWindow = divCum[i + b.days] - divCum[i];
+      if (navEnd - navStart + divInWindow > 0) addWins++;
+    }
+    out.push({ label: b.label, rawRate: rawWins / windows * 100, addRate: addWins / windows * 100, samples: windows });
+  });
+  return out;
+}
+// 手繪 SVG 淨值走勢圖（含期間最高／最低標記）
+function buildNavChartSvg(dates, navs) {
+  var w = 640, h = 220, padL = 46, padR = 10, padT = 14, padB = 24;
+  var n = navs.length;
+  if (n < 2) return '<div class="bt-loading">資料不足，無法繪製走勢圖</div>';
+  var minV = Math.min.apply(null, navs), maxV = Math.max.apply(null, navs);
+  var range = (maxV - minV) || 1;
+  var xf = function(i) { return padL + i / (n - 1) * (w - padL - padR); };
+  var yf = function(v) { return padT + (1 - (v - minV) / range) * (h - padT - padB); };
+  var pts = navs.map(function(v, i) { return xf(i).toFixed(1) + ',' + yf(v).toFixed(1); }).join(' ');
+  var maxI = navs.indexOf(maxV), minI = navs.indexOf(minV);
+  var gridLines = '', gridLabels = '';
+  for (var g = 0; g <= 4; g++) {
+    var gv = minV + range * g / 4;
+    var gy = yf(gv);
+    gridLines += '<line x1="' + padL + '" y1="' + gy.toFixed(1) + '" x2="' + (w - padR) + '" y2="' + gy.toFixed(1) + '" stroke="#eef2f8" stroke-width="1"/>';
+    gridLabels += '<text x="' + (padL - 6) + '" y="' + (gy + 3).toFixed(1) + '" font-size="9" fill="#94a3b8" text-anchor="end">' + gv.toFixed(2) + '</text>';
+  }
+  var areaPts = 'M' + xf(0).toFixed(1) + ',' + (h - padB) + ' L' + pts.split(' ').join(' L') + ' L' + xf(n - 1).toFixed(1) + ',' + (h - padB) + ' Z';
+  return '<svg viewBox="0 0 ' + w + ' ' + h + '" style="width:100%;height:auto;display:block">'
+    + gridLines + gridLabels
+    + '<path d="' + areaPts + '" fill="rgba(38,87,160,0.08)" stroke="none"/>'
+    + '<polyline points="' + pts + '" fill="none" stroke="#2657a0" stroke-width="1.6"/>'
+    + '<circle cx="' + xf(maxI).toFixed(1) + '" cy="' + yf(maxV).toFixed(1) + '" r="3.5" fill="#dc2626"/>'
+    + '<circle cx="' + xf(minI).toFixed(1) + '" cy="' + yf(minV).toFixed(1) + '" r="3.5" fill="#16a34a"/>'
+    + '<text x="' + xf(0).toFixed(1) + '" y="' + (h - 6) + '" font-size="9" fill="#94a3b8">' + dates[0] + '</text>'
+    + '<text x="' + (w - padR - 58) + '" y="' + (h - 6) + '" font-size="9" fill="#94a3b8">' + dates[n - 1] + '</text>'
+    + '</svg>';
+}
+function pctStr(v, digits) {
+  if (v === null || v === undefined || isNaN(v)) return '—';
+  digits = digits === undefined ? 2 : digits;
+  return (v >= 0 ? '+' : '') + v.toFixed(digits) + '%';
+}
+function btStat(label, val, neg) {
+  var cls = neg === undefined ? '' : (neg ? 'ret-neg' : 'ret-pos');
+  return '<div class="bt-stat"><div class="bt-stat-label">' + eh(label) + '</div><div class="bt-stat-val ' + cls + '">' + val + '</div></div>';
+}
+// 抓取單一標的「全部」配息記錄（不限近6月），供回測還原使用
+async function fetchDividendHistory(r) {
+  if (!r.v40 || !r.v41) return [];
+  var isISh = isISharesName(r.name);
+  try {
+    if (r.v41 === 'C') {
+      var jtext = await fetchBig5('/ETFData/djjson/et050000json.djjson?a=' + r.v40);
+      return parseEtfDivJson(jtext, isISh);
+    } else if (r.v41 === 'B') {
+      return parseDivHtml(await fetchBig5('/w/wb/wb05.djhtm?a=' + r.v40), isISh);
+    } else if (r.v41 === 'A') {
+      return parseDivHtml(await fetchBig5('/w/wr/wr10.djhtm?a=' + r.v40), isISh);
+    }
+  } catch (e) { /* 配息資料抓取失敗，不中斷回測流程，僅略過還原 */ }
+  return [];
+}
+// 將配息（月份粒度）對應至該月最後一個交易日，回傳 {索引: 配息金額}，供「還原(含息)」與「賺錢機率」共用
+function mapDivToIndex(dates, divs) {
+  if (!divs || !divs.length) return null;
+  var divByMonth = {};
+  divs.forEach(function(d) {
+    if (!d || !d.date || !(d.amount > 0)) return;
+    var key = String(d.date).substring(0, 7).replace('/', '-');
+    if (key.length !== 7) return;
+    divByMonth[key] = (divByMonth[key] || 0) + d.amount;
+  });
+  if (!Object.keys(divByMonth).length) return null;
+  var monthLastIdx = {};
+  dates.forEach(function(ds, i) { monthLastIdx[ds.substring(0, 7)] = i; });
+  var divOnIdx = {};
+  var matched = 0;
+  Object.keys(divByMonth).forEach(function(mk) {
+    if (monthLastIdx.hasOwnProperty(mk)) {
+      divOnIdx[monthLastIdx[mk]] = (divOnIdx[monthLastIdx[mk]] || 0) + divByMonth[mk];
+      matched++;
+    }
+  });
+  if (!matched) return null;
+  return divOnIdx;
+}
+// 反向（由最新日往回）以乘法還原連續的「含息總報酬」序列
+// 還原邏輯：adj[最後一日] = 淨值[最後一日]；往回逐日以「(次日淨值+次日配息)/當日淨值」反推，
+// 使任意兩日之間的還原值變化率 = 該期間實際含息報酬率（視為配息發生當日按淨值滾入、含再投資複利效果）
+function buildAdjustedNav(dates, navs, divOnIdx) {
+  if (!divOnIdx) return null;
+  var n = navs.length, adj = new Array(n);
+  adj[n - 1] = navs[n - 1];
+  for (var i = n - 2; i >= 0; i--) {
+    var divNext = divOnIdx[i + 1] || 0;
+    var ratio = navs[i] > 0 ? (navs[i + 1] + divNext) / navs[i] : 1;
+    adj[i] = ratio > 0 ? adj[i + 1] / ratio : adj[i + 1];
+  }
+  return adj;
+}
+// 將「索引→配息金額」對照表，依切片起點重新編號為相對索引（供切換回測區間時使用）
+function sliceDivOnIdx(divOnIdx, startIdx) {
+  var out = {};
+  if (!divOnIdx) return out;
+  Object.keys(divOnIdx).forEach(function(k) {
+    var idx = parseInt(k, 10);
+    if (idx >= startIdx) out[idx - startIdx] = divOnIdx[idx];
+  });
+  return out;
+}
+// 建立累計配息序列：divCum[i] = 截至第 i 個交易日（含）為止之累計配息金額
+function buildDivCum(divOnIdx, n) {
+  var divCum = new Array(n), running = 0;
+  for (var i = 0; i < n; i++) {
+    running += (divOnIdx[i] || 0);
+    divCum[i] = running;
+  }
+  return divCum;
+}
+// 將配息記錄彙整為「月份→金額」對照表（同月份多筆記錄加總），供「期間配息合計」與「配息調整頻率」計算使用
+function buildDivByMonth(divs) {
+  var map = {};
+  (divs || []).forEach(function(d) {
+    if (!d || !d.date || !(d.amount > 0)) return;
+    var key = String(d.date).substring(0, 7).replace('/', '-');
+    if (key.length !== 7) return;
+    map[key] = (map[key] || 0) + d.amount;
+  });
+  return map;
+}
+// 期間配息合計／配息調整次數：依目前回測區間（月份粒度）計算累計配息金額，並統計「金額較前月變動」之次數
+// 顯示格式：配息調整次數 / 期間總配息次數（例如 3 / 36）
+function computeDivStats(divByMonth, startMonth, endMonth) {
+  if (!divByMonth) return { total: 0, adjCount: null, totalCount: 0 };
+  var months = Object.keys(divByMonth).sort().filter(function(m) {
+    return (!startMonth || m >= startMonth) && (!endMonth || m <= endMonth);
+  });
+  if (!months.length) return { total: 0, adjCount: null, totalCount: 0 };
+  var total = months.reduce(function(s, m) { return s + divByMonth[m]; }, 0);
+  var adjCount = 0;
+  for (var i = 1; i < months.length; i++) {
+    if (Math.abs(divByMonth[months[i]] - divByMonth[months[i - 1]]) >= 1e-9) adjCount++;
+  }
+  return { total: total, adjCount: adjCount, totalCount: months.length };
+}
+// 依「全部／3年／4年／5年」回測區間設定，找出對應的起始索引
+function rangeStartIdx(dates, years) {
+  if (!years) return 0;
+  var lastD = new Date(dates[dates.length - 1]);
+  var cutoff = new Date(lastD);
+  cutoff.setFullYear(cutoff.getFullYear() - years);
+  for (var i = 0; i < dates.length; i++) {
+    if (new Date(dates[i]) >= cutoff) return i;
+  }
+  return 0;
+}
+// 統一解析「全部／3年／4年／5年／自訂」區間設定，回傳 {startIdx, endIdx}（皆為含端點之索引）
+function resolveRangeIndices(dates, range, customStart, customEnd) {
+  if (range === 'custom') {
+    var startIdx = 0, endIdx = dates.length - 1;
+    if (customStart) {
+      for (var i = 0; i < dates.length; i++) { if (dates[i] >= customStart) { startIdx = i; break; } }
+    }
+    if (customEnd) {
+      for (var j = dates.length - 1; j >= 0; j--) { if (dates[j] <= customEnd) { endIdx = j; break; } }
+    }
+    if (endIdx < startIdx) endIdx = startIdx;
+    return { startIdx: startIdx, endIdx: endIdx };
+  }
+  return { startIdx: rangeStartIdx(dates, range), endIdx: dates.length - 1 };
+}
+// 回測目前狀態（供切換按鈕重繪使用）
+var _btState = null;
+// 開啟 / 關閉回測 Modal
+async function openBacktest(idx) {
+  var rows = window.UND_ROWS || [];
+  var r = rows[idx];
+  if (!r) return;
+  var ov = $('bt-overlay');
+  ov.style.display = 'flex';
+  requestAnimationFrame(function() { ov.classList.add('show'); });
+  $('bt-title').innerHTML = ICON.trendUp + ' ' + eh(r.name) + ' 分析';
+  $('bt-body').innerHTML = '<div class="bt-loading">' + ICON.loader + ' 載入逐日淨值資料中...</div>';
+  try {
+    var hasDiv = r.freq && r.freq !== '無';
+    var results = await Promise.all([
+      fetchDailyNav(r),
+      hasDiv ? fetchDividendHistory(r) : Promise.resolve([])
+    ]);
+    var series = results[0], divs = results[1];
+    if (!series.navs || series.navs.length < 10) {
+      $('bt-body').innerHTML = '<div class="bt-loading">' + ICON.warn + ' 此標的暫無足夠的逐日淨值資料</div>';
+      return;
+    }
+    renderBacktest(series, r, divs);
+  } catch (e) {
+    $('bt-body').innerHTML = '<div class="bt-loading">' + ICON.error + ' 載入失敗：' + eh(e.message) + '<br><small style="color:#b0b8c4">請確認 Proxy 設定，或稍後再試。</small></div>';
+  }
+}
+function closeBacktest() {
+  var ov = $('bt-overlay');
+  ov.classList.remove('show');
+  setTimeout(function() { ov.style.display = 'none'; }, 180);
+}
+// Esc 鍵關閉分析 Modal
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape' || e.key === 'Esc') {
+    var ov = $('bt-overlay');
+    if (ov && ov.classList.contains('show')) closeBacktest();
+  }
+});
+// 切換主圖／統計區顯示「還原(含息)」或「淨值（未還原）」
+function setBtMode(mode) {
+  if (!_btState || _btState.mode === mode) return;
+  _btState.mode = mode;
+  var toggle = $('bt-mode-toggle');
+  if (toggle) {
+    Array.prototype.forEach.call(toggle.querySelectorAll('.bt-mode-btn'), function(btn) {
+      btn.classList.toggle('active', btn.getAttribute('data-mode') === mode);
+    });
+  }
+  renderBtMain();
+}
+// 切換回測區間（全部／3年／4年／5年）：同時重繪主圖統計與賺錢機率
+function setBtRange(val) {
+  if (!_btState) return;
+  val = val || null;
+  if (_btState.range === val) return;
+  _btState.range = val;
+  var toggle = $('bt-range-toggle');
+  if (toggle) {
+    Array.prototype.forEach.call(toggle.querySelectorAll('.bt-range-btn'), function(btn) {
+      var v = btn.getAttribute('data-range');
+      var match = v === '' ? !val : v === String(val);
+      btn.classList.toggle('active', match);
+    });
+  }
+  var customEl = $('bt-custom-range');
+  if (customEl) customEl.style.display = (val === 'custom') ? 'flex' : 'none';
+  renderBtMain();
+  renderWinRate();
+}
+// 套用自訂起訖日期（由日期輸入框 onchange 觸發）
+function applyCustomRange() {
+  if (!_btState) return;
+  var startEl = $('bt-custom-start'), endEl = $('bt-custom-end');
+  var startV = startEl && startEl.value ? startEl.value : null;
+  var endV = endEl && endEl.value ? endEl.value : null;
+  if (startV && endV && startV > endV) { var tmp = startV; startV = endV; endV = tmp; }
+  _btState.customStart = startV;
+  _btState.customEnd = endV;
+  renderBtMain();
+  renderWinRate();
+}
+function renderBtMain() {
+  var s = _btState;
+  if (!s) return;
+  var idxR = resolveRangeIndices(s.dates, s.range, s.customStart, s.customEnd);
+  var dates = s.dates.slice(idxR.startIdx, idxR.endIdx + 1);
+  var rawNavs = s.rawNavs.slice(idxR.startIdx, idxR.endIdx + 1);
+  var adjNavsSliced = s.adjNavs ? s.adjNavs.slice(idxR.startIdx, idxR.endIdx + 1) : null;
+  var navs = s.mode === 'adj' && adjNavsSliced ? adjNavsSliced : rawNavs;
+  var stats = computeStats(dates, navs);
+  var el = $('bt-main');
+  if (!el) return;
+  if (!stats) { el.innerHTML = '<div class="bt-loading">' + ICON.warn + ' 資料不足無法計算</div>'; return; }
+  var chartHtml = buildNavChartSvg(dates, navs);
+  var hasDivData = !!s.divByMonth;
+  var divStats = hasDivData ? computeDivStats(s.divByMonth, dates[0].substring(0, 7), dates[dates.length - 1].substring(0, 7)) : { total: 0, freq: null };
+  var divTotalStr = hasDivData ? divStats.total.toFixed(4) : '無';
+  var divFreqStr = hasDivData ? (divStats.totalCount > 0 ? (divStats.adjCount + ' / ' + divStats.totalCount) : '—') : '無';
+  var statsHtml = '<div class="bt-stats-grid">'
+    + btStat('期間報酬', pctStr(stats.totalRet), stats.totalRet < 0)
+    + btStat('年化報酬', pctStr(stats.cagr), stats.cagr < 0)
+    + btStat('年化波動度', stats.annVol.toFixed(2) + '%')
+    + btStat('夏普比率', stats.sharpe === null ? '—' : stats.sharpe.toFixed(2))
+    + btStat('最大回撤', pctStr(stats.mdd), true)
+    + btStat('期間最高', stats.high.toFixed(4))
+    + btStat('期間最低', stats.low.toFixed(4))
+    + btStat('目前淨值', stats.cur.toFixed(4))
+    + btStat('期間配息合計', divTotalStr)
+    + btStat('配息調整次數', divFreqStr)
+    + '</div>';
+  el.innerHTML = '<div class="bt-meta">資料區間：' + stats.startDate + ' ～ ' + stats.endDate + '　（' + stats.n + ' 個交易日）</div>' + chartHtml + statsHtml;
+}
+// 賺錢機率區塊：有配息資料者，以單一長條呈現紅（淨值）＋藍（加上配息後）雙色；無配息者維持原本單色長條
+function renderWinRate() {
+  var s = _btState;
+  var el = $('bt-winrate');
+  if (!s || !el) return;
+  var idxR = resolveRangeIndices(s.dates, s.range, s.customStart, s.customEnd);
+  var startIdx = idxR.startIdx;
+  var dates = s.dates.slice(idxR.startIdx, idxR.endIdx + 1);
+  var rawNavs = s.rawNavs.slice(idxR.startIdx, idxR.endIdx + 1);
+  var html;
+  if (s.divOnIdx) {
+    var slicedDiv = sliceDivOnIdx(s.divOnIdx, startIdx);
+    var divCum = buildDivCum(slicedDiv, rawNavs.length);
+    var winList = computeWinRatesDual(rawNavs, divCum);
+    if (winList.length) {
+      html = '<div class="bt-section-title">' + ICON.coin + ' 賺錢機率（持有期間滾動勝率：紅＝淨值，藍＝加上配息後）</div>'
+        + '<div class="wr-legend"><span><i style="background:#dc2626"></i>淨值（未還原）</span><span><i style="background:#2657a0"></i>加上配息後</span></div>'
+        + winList.map(function(w) {
+            var addSeg = Math.max(0, w.addRate - w.rawRate);
+            var rawZero = w.rawRate <= 0.05;
+            var rawFullCls = addSeg <= 0.05 ? ' wr-seg-full' : '';
+            var addFullCls = (rawZero && addSeg > 0.05) ? ' wr-seg-full' : '';
+            return '<div class="wr-row-dual">'
+              + '<div class="wr-label">' + w.label + '</div>'
+              + '<div class="wr-track-dual"><div class="wr-seg-raw' + rawFullCls + '" style="width:' + w.rawRate.toFixed(1) + '%"></div><div class="wr-seg-add' + addFullCls + '" style="left:' + w.rawRate.toFixed(1) + '%;width:' + addSeg.toFixed(1) + '%"></div></div>'
+              + '<div class="wr-pct-dual">' + w.rawRate.toFixed(1) + '% → ' + w.addRate.toFixed(1) + '%</div>'
+              + '</div>';
+          }).join('')
+        + '<div class="bt-wr-note">統計樣本不足（少於 10 個滾動視窗）之持有期間已自動隱藏。「加上配息後」採「期末淨值－期初淨值＋期間內配息金額」計算，不含配息再投資之複利效果，與上方還原(含息)圖表之計算方式不同，僅供參考。</div>';
+    } else {
+      html = '<div class="bt-section-title">' + ICON.coin + ' 賺錢機率</div><div class="bt-loading" style="padding:14px 0">資料區間過短，尚無法計算任何持有期間之勝率</div>';
+    }
+  } else {
+    var rawWin = computeWinRates(rawNavs);
+    if (rawWin.length) {
+      html = '<div class="bt-section-title">' + ICON.coin + ' 賺錢機率（持有期間滾動勝率）</div><div class="wr-bars">'
+        + rawWin.map(function(w) {
+            var barColor = w.winRate >= 70 ? '#16a34a' : w.winRate >= 50 ? '#3b82c4' : '#dc2626';
+            return '<div class="wr-row">'
+              + '<div class="wr-label">' + w.label + '</div>'
+              + '<div class="wr-track"><div class="wr-fill" style="width:' + w.winRate.toFixed(1) + '%;background:' + barColor + '"></div></div>'
+              + '<div class="wr-pct">' + w.winRate.toFixed(1) + '%</div>'
+              + '</div>';
+          }).join('')
+        + '</div><div class="bt-wr-note">統計樣本不足（少於 10 個滾動視窗）之持有期間已自動隱藏</div>';
+    } else {
+      html = '<div class="bt-section-title">' + ICON.coin + ' 賺錢機率</div><div class="bt-loading" style="padding:14px 0">資料區間過短，尚無法計算任何持有期間之勝率</div>';
+    }
+  }
+  el.innerHTML = html;
+}
+function renderBacktest(series, r, divs) {
+  var rawStats = computeStats(series.dates, series.navs);
+  if (!rawStats) { $('bt-body').innerHTML = '<div class="bt-loading">' + ICON.warn + ' 資料不足無法計算</div>'; return; }
+  var divOnIdx = mapDivToIndex(series.dates, divs);
+  var adjNavs = buildAdjustedNav(series.dates, series.navs, divOnIdx);
+  var divByMonth = buildDivByMonth(divs);
+  _btState = {
+    dates: series.dates, rawNavs: series.navs, adjNavs: adjNavs, divOnIdx: divOnIdx,
+    divByMonth: Object.keys(divByMonth).length ? divByMonth : null,
+    mode: 'raw', range: 3, customStart: null, customEnd: null
+  };
+  var divNote = adjNavs
+    ? '<div class="bt-div-note">' + ICON.coin + ' 已抓取此標的歷史配息記錄並還原為「含息總報酬」序列（假設配息發生於當月最後一個交易日，並按當時淨值滾入計算，含再投資複利效果，故與真實除息日可能有些微誤差，僅供參考）。可用下方按鈕切換顯示淨值（未還原）或還原(含息)結果。下方「賺錢機率」則改用較單純之「淨值變化＋配息金額」方式計算，並以單一雙色長條呈現。</div>'
+    : '';
+  var modeToggle = adjNavs
+    ? '<div class="bt-mode-toggle" id="bt-mode-toggle">'
+      + '<button class="bt-mode-btn active" data-mode="raw" onclick="setBtMode(\'raw\')">' + ICON.chart + ' 淨值（未還原）</button>'
+      + '<button class="bt-mode-btn" data-mode="adj" onclick="setBtMode(\'adj\')">' + ICON.coin + ' 還原(含息)</button>'
+      + '</div>'
+    : '';
+  var rangeToggle = '<div class="bt-range-toggle" id="bt-range-toggle">'
+    + '<button class="bt-range-btn" data-range="" onclick="setBtRange(null)">全部</button>'
+    + '<button class="bt-range-btn" data-range="1" onclick="setBtRange(1)">1年</button>'
+    + '<button class="bt-range-btn active" data-range="3" onclick="setBtRange(3)">3年</button>'
+    + '<button class="bt-range-btn" data-range="4" onclick="setBtRange(4)">4年</button>'
+    + '<button class="bt-range-btn" data-range="5" onclick="setBtRange(5)">5年</button>'
+    + '<button class="bt-range-btn" data-range="custom" onclick="setBtRange(\'custom\')">自訂</button>'
+    + '</div>';
+  var dMin = series.dates[0], dMax = series.dates[series.dates.length - 1];
+  var customRangeHtml = '<div class="bt-custom-range" id="bt-custom-range" style="display:none">'
+    + '<input type="date" id="bt-custom-start" min="' + dMin + '" max="' + dMax + '" value="' + dMin + '" onchange="applyCustomRange()">'
+    + '<span>～</span>'
+    + '<input type="date" id="bt-custom-end" min="' + dMin + '" max="' + dMax + '" value="' + dMax + '" onchange="applyCustomRange()">'
+    + '</div>';
+  $('bt-body').innerHTML = divNote + modeToggle + rangeToggle + customRangeHtml + '<div id="bt-main"></div><div id="bt-winrate"></div>';
+  renderBtMain();
+  renderWinRate();
+}
+// 頁面載入後自動開始
+window.addEventListener('DOMContentLoaded', function() {
+  startLoad();
+});
+</script>
+</body>
+</html>
