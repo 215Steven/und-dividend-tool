@@ -1491,8 +1491,10 @@ function sortBy(col, forceDir) {
   _sortDir = (forceDir !== undefined) ? forceDir : (_sortCol === col ? -_sortDir : 1);
   _sortCol = col;
   rows.sort(function(a, b) {
-    var av = (a.querySelectorAll('td')[col] || {}).textContent || '';
-    var bv = (b.querySelectorAll('td')[col] || {}).textContent || '';
+    // 手機卡片會在列內插入巢狀表格，querySelectorAll('td') 的索引會錯位，
+    // 故優先讀取卡片建立時寫入的 data-c{col}
+    var av = a.hasAttribute('data-c'+col) ? a.getAttribute('data-c'+col) : ((a.querySelectorAll('td')[col] || {}).textContent || '');
+    var bv = b.hasAttribute('data-c'+col) ? b.getAttribute('data-c'+col) : ((b.querySelectorAll('td')[col] || {}).textContent || '');
     av = av.trim(); bv = bv.trim();
     var an = parseFloat(av.replace('%', '')), bn = parseFloat(bv.replace('%', ''));
     return (!isNaN(an) && !isNaN(bn)) ? (an - bn) * _sortDir : av.localeCompare(bv, 'zh-TW') * _sortDir;
