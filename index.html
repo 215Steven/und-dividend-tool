@@ -2780,8 +2780,12 @@ window.addEventListener('DOMContentLoaded', function() {
   var BUDGET = 5000;          // 留 200px 緩衝，與父頁 MAX = 5200 相呼應
   var lastCap = 0, lastN = -1;
   var st = document.createElement('style');
+  // 容器一旦有 max-height + overflow，sticky 的定位基準就變成該容器，
+  // 標籤列會浮在清單中間；嵌入版 iframe 本身不捲動，sticky 也沒意義，改成不吸頂
   st.textContent = '.pg-tail{margin:0;padding:11px 12px;border-top:1px dashed #e3eaf3;text-align:center}'
-    + '.pg-tail span{font-size:12px;color:#8a98a8;font-weight:600}';
+    + '.pg-tail span{font-size:12px;color:#8a98a8;font-weight:600}'
+    + '.mc-lhead{position:static !important;top:auto !important}'
+    + '.mob-ctrl-bar{position:static !important;top:auto !important}';
   document.head.appendChild(st);
   function apply(){
     var tbl = document.querySelector('table');
