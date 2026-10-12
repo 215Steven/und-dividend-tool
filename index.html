@@ -2770,69 +2770,62 @@ window.addEventListener('DOMContentLoaded', function() {
 </script>
 <script>
 /* ═══ 嵌入版清單高度控制 ═══
-   父頁 iframe 自動調高有 MAX 上限（目前 5000px），超過的部分會被裁掉。
-   改成只填滿預算高度，其餘引到完整版；排序用的是全部標的，高配息率的都在前面。
+   父頁 iframe 自動調高有 MAX 上限（目前 5200px），超過的部分會被裁掉。
+   做法：只給表格容器一個 max-height，不動任何一列。
+   （曾經改成用 class 藏列，但那會跟排序與卡片建置互卡，造成標的排錯位或消失）
+   全部標的都還在 DOM 裡，排序、篩選、搜尋完全不受影響。
    獨立開啟（非 iframe）時不作用。 */
 (function(){
   if (!document.documentElement.classList.contains('is-embed')) return;
   var BUDGET = 5000;          // 留 200px 緩衝，與父頁 MAX = 5200 相呼應
-  var shown = 30, lastKey = '', calibrated = false;
+  var lastCap = 0, lastN = -1;
   var st = document.createElement('style');
-  st.textContent = '.pg-hide{display:none !important}'
-    + '.pg-tail{margin:10px 0 2px;padding:10px 12px;border-top:1px dashed #e3eaf3;'
-    + 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}'
-    + '.pg-tail span{font-size:12px;color:#8a98a8;font-weight:600}'
-    + '.pg-tail{justify-content:center}';
+  st.textContent = '.pg-tail{margin:0;padding:11px 12px;border-top:1px dashed #e3eaf3;text-align:center}'
+    + '.pg-tail span{font-size:12px;color:#8a98a8;font-weight:600}';
   document.head.appendChild(st);
-  function rows(){ return [].slice.call(document.querySelectorAll('table tbody tr.vr')); }
-  function rowH(vis){
-    var sum = 0, n = 0;
-    for (var i = 0; i < vis.length && n < 5; i++) {
-      var h = vis[i].getBoundingClientRect().height;
-      if (h > 0) { sum += h; n++; }
-    }
-    return n ? sum / n : 50;
-  }
-  function paint(vis){ vis.forEach(function(r, i){ r.classList.toggle('pg-hide', i >= shown); }); }
   function apply(){
-    var all = rows();
-    if (!all.length) return;
-    // 篩選是用 inline display 控制，不能跟我們的 pg-hide 混在一起判斷
-    var vis = all.filter(function(r){ return r.style.display !== 'none'; });
-    all.forEach(function(r){ if (r.style.display === 'none') r.classList.remove('pg-hide'); });
-    if (!calibrated) {
-      paint(vis);
-      if (vis.length > shown) {
-        // 實測排版後再校正：扣掉表格上下的固定區塊，剩下的才是列的預算
-        var rh = rowH(vis);
-        var on = vis.filter(function(r){ return !r.classList.contains('pg-hide'); }).length;
-        var overhead = document.documentElement.scrollHeight - on * rh;
-        shown = Math.max(10, Math.floor((BUDGET - overhead) / Math.max(20, rh)));
-        calibrated = true;
-        lastKey = '';
-      }
-    }
-    var key = vis.length + '|' + shown;
-    if (key === lastKey) return;
-    lastKey = key;
-    paint(vis);
     var tbl = document.querySelector('table');
     var box = tbl ? tbl.parentElement : null;
     if (!box) return;
+    var rows = [].slice.call(document.querySelectorAll('table tbody tr.vr'))
+      .filter(function(r){ return r.style.display !== 'none'; });
+    if (!rows.length) return;
+    var boxH = box.getBoundingClientRect().height;
+    // 清單以外的部分（標題、統計列、膠囊、免責聲明…）不隨上限變動，所以可以直接扣
+    var outside = document.documentElement.scrollHeight - boxH;
+    var cap = Math.max(600, BUDGET - outside);
+    var full = tbl.getBoundingClientRect().height;
+    if (full <= cap + 4) {
+      if (lastCap) { box.style.maxHeight = ''; box.style.overflow = ''; lastCap = 0; }
+      var t0 = document.querySelector('.pg-tail'); if (t0) t0.remove();
+      lastN = -1;
+      return;
+    }
+    if (Math.abs(cap - lastCap) > 20) {
+      lastCap = cap;
+      box.style.maxHeight = cap + 'px';
+      box.style.overflow = 'hidden';
+    }
+    var top0 = box.getBoundingClientRect().top;
+    var n = 0;
+    for (var i = 0; i < rows.length; i++) {
+      if (rows[i].getBoundingClientRect().top - top0 < lastCap) n++; else break;
+    }
     var tail = document.querySelector('.pg-tail');
-    var rest = vis.length - shown;
-    if (rest <= 0) { if (tail) tail.remove(); return; }
     if (!tail) {
       tail = document.createElement('div');
       tail.className = 'pg-tail';
       tail.innerHTML = '<span></span>';
       box.parentElement.insertBefore(tail, box.nextSibling);
     }
-    tail.querySelector('span').textContent =
-      '已顯示前 ' + shown + ' 檔（共 ' + vis.length + ' 檔）――排序是以全部標的計算';
+    if (n !== lastN) {
+      lastN = n;
+      tail.querySelector('span').textContent =
+        '已顯示前 ' + n + ' 檔（共 ' + rows.length + ' 檔）――排序與搜尋是以全部標的計算';
+    }
   }
-  setInterval(apply, 400);
-  setTimeout(apply, 300);
+  setInterval(apply, 600);
+  setTimeout(apply, 400);
 })();
 </script>
 </body>
