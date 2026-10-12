@@ -2769,62 +2769,36 @@ window.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 <script>
-/* ═══ 嵌入版清單高度控制 ═══
-   父頁 iframe 自動調高有 MAX 上限（目前 5200px），超過的部分會被裁掉。
-   做法：只給表格容器一個 max-height，不動任何一列。
-   （曾經改成用 class 藏列，但那會跟排序與卡片建置互卡，造成標的排錯位或消失）
-   全部標的都還在 DOM 裡，排序、篩選、搜尋完全不受影響。
+/* ═══ 嵌入版：清單改為框內自己捲動 ═══
+   父頁 iframe 有高度上限，之前是「截斷」，後面的標的看不到；
+   改成給表格容器一個固定高度加內部捲動，187 檔全部都到得了，
+   文章裡的區塊也從 5200px 縮到約 1900px。
+   內部捲動後 sticky 會以該容器為基準，所以欄位標籤列改回吸頂（top:0）。
    獨立開啟（非 iframe）時不作用。 */
 (function(){
   if (!document.documentElement.classList.contains('is-embed')) return;
-  var BUDGET = 5000;          // 留 200px 緩衝，與父頁 MAX = 5200 相呼應
-  var lastCap = 0, lastN = -1;
   var st = document.createElement('style');
-  // 容器一旦有 max-height + overflow，sticky 的定位基準就變成該容器，
-  // 標籤列會浮在清單中間；嵌入版 iframe 本身不捲動，sticky 也沒意義，改成不吸頂
-  st.textContent = '.pg-tail{margin:0;padding:11px 12px;border-top:1px dashed #e3eaf3;text-align:center}'
-    + '.pg-tail span{font-size:12px;color:#8a98a8;font-weight:600}'
-    + '.mc-lhead{position:static !important;top:auto !important}'
-    + '.mob-ctrl-bar{position:static !important;top:auto !important}';
+  st.textContent = '.mc-lhead{position:sticky !important;top:0 !important;z-index:15}'
+    + '.mob-ctrl-bar{position:static !important;top:auto !important}'
+    + '.pg-tail{margin:0;padding:9px 12px;text-align:center}'
+    + '.pg-tail span{font-size:11.5px;color:#9aa7b5;font-weight:600}';
   document.head.appendChild(st);
+  function wantH(){ return window.innerWidth < 768 ? 560 : 640; }
+  var lastN = -1;
   function apply(){
     var tbl = document.querySelector('table');
     var box = tbl ? tbl.parentElement : null;
     if (!box) return;
-    var rows = [].slice.call(document.querySelectorAll('table tbody tr.vr'))
-      .filter(function(r){ return r.style.display !== 'none'; });
-    if (!rows.length) return;
-    // 不能用 document.scrollHeight：父頁會依我們回報的高度擐 iframe，iframe 視窗變高後
-    // scrollHeight 跟著變高，形成「越算越矮」的回授迴圈（曾縮到只剩 12 檔）。
-    // 改量元素位置：上方與下方區塊都跟 cap 無關，計算才會收斂。
-    var r = box.getBoundingClientRect();
-    var y = window.pageYOffset;
-    var above = r.top + y;
-    var contentBottom = 0;
-    var kids = document.body.children;
-    for (var k = 0; k < kids.length; k++) {
-      var kb = kids[k].getBoundingClientRect().bottom + y;
-      if (kb > contentBottom) contentBottom = kb;
+    var h = wantH();
+    // freeStickyAncestors 會把 overflow/max-height 設成 important 清掉，所以要反覆確認
+    if (box.style.maxHeight !== h + 'px') {
+      box.style.setProperty('max-height', h + 'px', 'important');
+      box.style.setProperty('overflow-y', 'auto', 'important');
+      box.style.setProperty('overflow-x', 'hidden', 'important');
+      box.style.setProperty('-webkit-overflow-scrolling', 'touch', 'important');
     }
-    var below = Math.max(0, contentBottom - (r.bottom + y));
-    var cap = Math.max(600, BUDGET - above - below);
-    var full = tbl.getBoundingClientRect().height;
-    if (full <= cap + 4) {
-      if (lastCap) { box.style.maxHeight = ''; box.style.overflow = ''; lastCap = 0; }
-      var t0 = document.querySelector('.pg-tail'); if (t0) t0.remove();
-      lastN = -1;
-      return;
-    }
-    if (Math.abs(cap - lastCap) > 20) {
-      lastCap = cap;
-      box.style.maxHeight = cap + 'px';
-      box.style.overflow = 'hidden';
-    }
-    var top0 = box.getBoundingClientRect().top;
-    var n = 0;
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].getBoundingClientRect().top - top0 < lastCap) n++; else break;
-    }
+    var n = document.querySelectorAll('table tbody tr.vr').length;
+    if (!n) return;
     var tail = document.querySelector('.pg-tail');
     if (!tail) {
       tail = document.createElement('div');
@@ -2834,12 +2808,12 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     if (n !== lastN) {
       lastN = n;
-      tail.querySelector('span').textContent =
-        '已顯示前 ' + n + ' 檔（共 ' + rows.length + ' 檔）――排序與搜尋是以全部標的計算';
+      tail.querySelector('span').textContent = '共 ' + n + ' 檔，清單可在框內上下捲動';
     }
   }
-  setInterval(apply, 600);
+  setInterval(apply, 800);
   setTimeout(apply, 400);
+  window.addEventListener('resize', apply);
 })();
 </script>
 </body>
