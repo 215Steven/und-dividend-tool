@@ -2769,6 +2769,41 @@ window.addEventListener('DOMContentLoaded', function() {
 })();
 </script>
 <script>
+/* ===== embed mode: hide blog CTA + report height to parent ===== */
+(function(){
+  var embedded = false;
+  try { embedded = (window.self !== window.top); } catch(e) { embedded = true; }
+  if (embedded) {
+    document.documentElement.classList.add('is-embed');
+    var st = document.createElement('style');
+    st.textContent = '.blog-cta-banner{display:none !important;}';
+    document.head.appendChild(st);
+  }
+  var last = 0;
+  function report(){
+    if (!embedded) return;
+    // 不能用 scrollHeight：父頁把 iframe 擐高之後，iframe 視窗就是那個高度，
+    // scrollHeight 會回報視窗高而不是內容高，高度就永遠降不下來。
+    var h = 0, kids = document.body.children;
+    for (var i = 0; i < kids.length; i++) {
+      var kb = kids[i].getBoundingClientRect().bottom + window.pageYOffset;
+      if (kb > h) h = kb;
+    }
+    h = Math.ceil(h) + 8;
+    if (Math.abs(h - last) < 24) return;
+    last = h;
+    try { window.parent.postMessage({ __vTool: 1, height: h }, '*'); } catch(e) {}
+  }
+  window.addEventListener('load', report);
+  window.addEventListener('resize', report);
+  if (window.ResizeObserver) {
+    try { new ResizeObserver(report).observe(document.body); } catch(e) {}
+  }
+  setInterval(report, 1000);
+  setTimeout(report, 300);
+})();
+</script>
+<script>
 /* ═══ 嵌入版：清單改為框內自己捲動 ═══
    父頁 iframe 有高度上限，之前是「截斷」，後面的標的看不到；
    改成給表格容器一個固定高度加內部捲動，187 檔全部都到得了，
