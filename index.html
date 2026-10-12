@@ -1375,7 +1375,9 @@ const ICON = {
   coin:    '<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="18"/><path d="M15 9.5a2.5 2.5 0 0 0-2.5-2.5h-1A2.5 2.5 0 0 0 9 9.5c0 1.38 1.12 2.1 2.5 2.5l1 .29c1.38.39 2.5 1.1 2.5 2.4A2.5 2.5 0 0 1 12.5 17h-1A2.5 2.5 0 0 1 9 14.5"/></svg>',
   loader:  '<svg class="i i-spin" viewBox="0 0 24 24"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></svg>'
 };
+var _quietRefresh = false;
 function setProgress(msg, pct) {
+  if (_quietRefresh) return;
   $('und-prog-msg').innerHTML = msg;
   if (pct !== undefined) $('und-prog-bar').style.width = pct + '%';
 }
@@ -1733,7 +1735,10 @@ function loadCache() {
     var raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
     var obj = JSON.parse(raw);
-    if (!obj || !obj.expiry || Date.now() > obj.expiry) return null; // 已過期
+    if (!obj || !obj.expiry) return null;
+    // 過期不丟掉：先渲染舊值再背景更新，使用者不用乾等
+    obj._stale = Date.now() > obj.expiry;
+    if (Date.now() > obj.expiry + 7 * 86400000) return null; // 逾七天太舊，寧可重載
     return obj;
   } catch(e) { return null; }
 }
@@ -1781,18 +1786,36 @@ async function startLoad(forceRefresh) {
         $('und-filter').style.display = 'block';
         $('und-table').style.display = 'block';
         applyFilter();
-        return; // 直接結束，不再 fetch
+        if (cached._stale) {
+          var _was = cached.savedAt;
+          $('st4').innerHTML = _was + ' ' + ICON.zap + '快取（更新中）';
+          _quietRefresh = true;
+          setTimeout(function() {
+            Promise.resolve(startLoad(true)).catch(function(){}).then(function(){
+              _quietRefresh = false;
+              var fresh = loadCache();
+              if (!fresh || fresh.savedAt === _was) {
+                // 來源 API 挂掉時不要讓使用者以為資料是新的
+                $('st4').innerHTML = _was + ' ' + ICON.zap + '快取（來源更新失敗）';
+                $('und-err').style.display = 'none';
+              }
+            });
+          }, 400);
+        }
+        return; // 已當場渲染，不再同步 fetch
       } catch(e) {
         // 快取渲染失敗，繼續正常載入
       }
     }
   }
-  $('und-filter').style.display = 'none';
-  $('und-table').style.display = 'none';
-  $('und-prog').style.display = 'block';
-  $('und-prog-bar').style.width = '0%';
-  $('und-tbody').innerHTML = '';
-  ['st0','st1','st2','st3','st4'].forEach(function(id) { $(id).textContent = '—'; });
+  if (!_quietRefresh) {
+    $('und-filter').style.display = 'none';
+    $('und-table').style.display = 'none';
+    $('und-prog').style.display = 'block';
+    $('und-prog-bar').style.width = '0%';
+    $('und-tbody').innerHTML = '';
+    ['st0','st1','st2','st3','st4'].forEach(function(id) { $(id).textContent = '—'; });
+  }
   try {
     // ── 嘗試後端快速路徑 /api/data（CDN 12h 快取，跨裝置共享）──────
     var _srvBundle = null;
