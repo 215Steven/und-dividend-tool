@@ -2794,10 +2794,20 @@ window.addEventListener('DOMContentLoaded', function() {
     var rows = [].slice.call(document.querySelectorAll('table tbody tr.vr'))
       .filter(function(r){ return r.style.display !== 'none'; });
     if (!rows.length) return;
-    var boxH = box.getBoundingClientRect().height;
-    // 清單以外的部分（標題、統計列、膠囊、免責聲明…）不隨上限變動，所以可以直接扣
-    var outside = document.documentElement.scrollHeight - boxH;
-    var cap = Math.max(600, BUDGET - outside);
+    // 不能用 document.scrollHeight：父頁會依我們回報的高度擐 iframe，iframe 視窗變高後
+    // scrollHeight 跟著變高，形成「越算越矮」的回授迴圈（曾縮到只剩 12 檔）。
+    // 改量元素位置：上方與下方區塊都跟 cap 無關，計算才會收斂。
+    var r = box.getBoundingClientRect();
+    var y = window.pageYOffset;
+    var above = r.top + y;
+    var contentBottom = 0;
+    var kids = document.body.children;
+    for (var k = 0; k < kids.length; k++) {
+      var kb = kids[k].getBoundingClientRect().bottom + y;
+      if (kb > contentBottom) contentBottom = kb;
+    }
+    var below = Math.max(0, contentBottom - (r.bottom + y));
+    var cap = Math.max(600, BUDGET - above - below);
     var full = tbl.getBoundingClientRect().height;
     if (full <= cap + 4) {
       if (lastCap) { box.style.maxHeight = ''; box.style.overflow = ''; lastCap = 0; }
