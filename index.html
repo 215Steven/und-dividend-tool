@@ -2703,7 +2703,8 @@ window.addEventListener('DOMContentLoaded', function() {
     var pf = document.createElement('button');
     pf.className = 'mob-filter-pill';
     pf.innerHTML = '搜尋 <span>▾</span>';
-    bar.appendChild(p1); bar.appendChild(p2); bar.appendChild(p3); bar.appendChild(pf);
+    // 膠囊順序：配息率→一年→三年→搜尋
+    bar.appendChild(p2); bar.appendChild(p1); bar.appendChild(p3); bar.appendChild(pf);
     fp.parentElement.insertBefore(bar, fp);
     function setSort(val, activeEl){
       // 再點同一顆切換高→低／低→高
