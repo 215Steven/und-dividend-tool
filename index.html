@@ -1080,6 +1080,15 @@ table.und-tbl td.c { text-align: center; }
         text-decoration: none; background: #f7fafd;
       }
     }
+  
+    @media (max-width: 767px) {
+      /* 載入完成時 JS 會對面板寫 inline display:block，會蓋掉媒體查詢，
+         導致手機版永遠露出一條搜尋列且「搜尋」膠囊按了沒反應，故加 !important */
+      .und-filter-panel { display: none !important; }
+      .und-filter-panel.mob-fp-open { display: block !important; }
+      /* 舊版卡片的收合動畫留有 max-height:0，展開區會被裁成 8px */
+      .mobile-card.mc-open .mc-extra { max-height: none !important; overflow: visible !important; }
+    }
   </style>
 </head>
 <body>
