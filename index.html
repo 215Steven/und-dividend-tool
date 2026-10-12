@@ -2768,5 +2768,72 @@ window.addEventListener('DOMContentLoaded', function() {
   window.addEventListener('resize', fix);
 })();
 </script>
-undefined</body>
+<script>
+/* ═══ 嵌入版清單高度控制 ═══
+   父頁 iframe 自動調高有 MAX 上限（目前 5000px），超過的部分會被裁掉。
+   改成只填滿預算高度，其餘引到完整版；排序用的是全部標的，高配息率的都在前面。
+   獨立開啟（非 iframe）時不作用。 */
+(function(){
+  if (!document.documentElement.classList.contains('is-embed')) return;
+  var BUDGET = 5000;          // 留 200px 緩衝，與父頁 MAX = 5200 相呼應
+  var shown = 30, lastKey = '', calibrated = false;
+  var st = document.createElement('style');
+  st.textContent = '.pg-hide{display:none !important}'
+    + '.pg-tail{margin:10px 0 2px;padding:10px 12px;border-top:1px dashed #e3eaf3;'
+    + 'display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}'
+    + '.pg-tail span{font-size:12px;color:#8a98a8;font-weight:600}'
+    + '.pg-tail{justify-content:center}';
+  document.head.appendChild(st);
+  function rows(){ return [].slice.call(document.querySelectorAll('table tbody tr.vr')); }
+  function rowH(vis){
+    var sum = 0, n = 0;
+    for (var i = 0; i < vis.length && n < 5; i++) {
+      var h = vis[i].getBoundingClientRect().height;
+      if (h > 0) { sum += h; n++; }
+    }
+    return n ? sum / n : 50;
+  }
+  function paint(vis){ vis.forEach(function(r, i){ r.classList.toggle('pg-hide', i >= shown); }); }
+  function apply(){
+    var all = rows();
+    if (!all.length) return;
+    // 篩選是用 inline display 控制，不能跟我們的 pg-hide 混在一起判斷
+    var vis = all.filter(function(r){ return r.style.display !== 'none'; });
+    all.forEach(function(r){ if (r.style.display === 'none') r.classList.remove('pg-hide'); });
+    if (!calibrated) {
+      paint(vis);
+      if (vis.length > shown) {
+        // 實測排版後再校正：扣掉表格上下的固定區塊，剩下的才是列的預算
+        var rh = rowH(vis);
+        var on = vis.filter(function(r){ return !r.classList.contains('pg-hide'); }).length;
+        var overhead = document.documentElement.scrollHeight - on * rh;
+        shown = Math.max(10, Math.floor((BUDGET - overhead) / Math.max(20, rh)));
+        calibrated = true;
+        lastKey = '';
+      }
+    }
+    var key = vis.length + '|' + shown;
+    if (key === lastKey) return;
+    lastKey = key;
+    paint(vis);
+    var tbl = document.querySelector('table');
+    var box = tbl ? tbl.parentElement : null;
+    if (!box) return;
+    var tail = document.querySelector('.pg-tail');
+    var rest = vis.length - shown;
+    if (rest <= 0) { if (tail) tail.remove(); return; }
+    if (!tail) {
+      tail = document.createElement('div');
+      tail.className = 'pg-tail';
+      tail.innerHTML = '<span></span>';
+      box.parentElement.insertBefore(tail, box.nextSibling);
+    }
+    tail.querySelector('span').textContent =
+      '已顯示前 ' + shown + ' 檔（共 ' + vis.length + ' 檔）――排序是以全部標的計算';
+  }
+  setInterval(apply, 400);
+  setTimeout(apply, 300);
+})();
+</script>
+</body>
 </html>
