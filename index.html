@@ -1097,6 +1097,18 @@ table.und-tbl td.c { text-align: center; }
       .mob-sort-pill.ms-active { background-color: #1d4ed8 !important; color: #fff !important; border-color: #1d4ed8 !important; }
       .mob-filter-pill { flex: 0 0 auto !important; padding-left: 10px !important; padding-right: 10px !important; font-size: 11.5px !important; }
     }
+  
+    @media (max-width: 767px) {
+      /* 統計卡改為可換行的標籤，原本橫向捲動會把最後一張裁成一半 */
+      .und-stats { display: flex !important; flex-wrap: wrap !important; overflow: visible !important;
+                     gap: 6px !important; padding: 8px 0 8px !important; }
+      .und-stat { flex: 0 0 auto !important; display: inline-flex !important;
+                    flex-direction: row-reverse !important; align-items: baseline !important;
+                    gap: 4px !important; padding: 5px 9px !important; min-width: 0 !important;
+                    border-radius: 7px !important; }
+      .und-stat-num { font-size: 14px !important; line-height: 1.2 !important; }
+      .und-stat-label { font-size: 10.5px !important; line-height: 1.2 !important; letter-spacing: 0 !important; }
+    }
   </style>
 </head>
 <body>
