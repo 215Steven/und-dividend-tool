@@ -454,7 +454,7 @@ table.und-tbl td.c { text-align: center; }
 .t-down  { color: #16a34a; }
 .t-flat  { color: #94a3b8; }
 /* ── RWD：卡片模式（≤ 768px，手機 / iPad 直立）── */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   .und-mobile-sort { display: flex; }
   .und-table-scroll {
     overflow-x: hidden;
@@ -921,7 +921,7 @@ table.und-tbl td.c { text-align: center; }
    每筆自 208px 降至約 50px，一個畫面由 2.9 檔increase到 12 檔。
    放在既有 .mc-* 規則之後，少數屬性需 !important 才能覆蓋。
    ═══════════════════════════════════════════════════════════ */
-@media (max-width: 768px) {
+@media (max-width: 767px) {
   table.und-tbl tbody tr.vr.mc-built > td { display: none !important; }
   table.und-tbl tbody { gap: 0 !important; padding: 0 !important; }
   table.und-tbl tr.vr {
@@ -997,6 +997,20 @@ table.und-tbl td.c { text-align: center; }
   .mc-analyze button, .mc-analyze a { width: 100%; min-height: 40px; display: inline-flex;
     align-items: center; justify-content: center; gap: 5px;
     font-size: 13px !important; padding: 0 12px !important; }
+}
+
+/* ── 平板（768–1200px）：基金名稱欄位寬度 ──────────────────
+   選擇器必須用 > 直接子層，否則會命中「近6月配息」迷你表內的 td。 */
+@media (min-width: 768px) and (max-width: 1200px) {
+  table.und-tbl > thead > tr > th:nth-child(1),
+  table.und-tbl > tbody > tr.vr > td:nth-child(1) { min-width: 176px !important; }
+  table.und-tbl > thead > tr > th:nth-child(12),
+  table.und-tbl > tbody > tr.vr > td:nth-child(12) { max-width: 76px !important; }
+  table.und-tbl > tbody > tr.vr > td:nth-child(12) {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  table.und-tbl > thead > tr > th,
+  table.und-tbl > tbody > tr.vr > td { padding-left: 6px !important; padding-right: 6px !important; }
 }
 </style>
 </head>
@@ -2421,6 +2435,7 @@ window.addEventListener('DOMContentLoaded', function() {
     }
   }
   // sticky 需祖先無 overflow:hidden 與 max-height，否則只在該範圍內作用
+  var _freed = [];
   function freeStickyAncestors(table){
     var e = table.parentElement, n = 0;
     while(e && e !== document.body && n < 4){
@@ -2429,6 +2444,7 @@ window.addEventListener('DOMContentLoaded', function() {
         e.style.setProperty('overflow','visible','important');
         e.style.setProperty('max-height','none','important');
         e.style.setProperty('height','auto','important');
+        if(_freed.indexOf(e)<0) _freed.push(e);
       }
       e = e.parentElement; n++;
     }
@@ -2501,7 +2517,22 @@ window.addEventListener('DOMContentLoaded', function() {
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init);
   else init();
-  window.addEventListener('resize', function(){ if(isMobile()) init(); });
+  // 離開手機寬度時必須拆除卡片，否則卡片與表格儲存格會同時渲染（列高暴增）
+  function teardown(){
+    var cs=document.querySelectorAll('.mobile-card');
+    for(var i=0;i<cs.length;i++) cs[i].remove();
+    var bs=document.querySelectorAll('tr.vr.mc-built');
+    for(var j=0;j<bs.length;j++) bs[j].classList.remove('mc-built');
+    var hs=document.querySelectorAll('.mc-lhead');
+    for(var k=0;k<hs.length;k++) hs[k].remove();
+    for(var m=0;m<_freed.length;m++){
+      _freed[m].style.removeProperty('overflow');
+      _freed[m].style.removeProperty('max-height');
+      _freed[m].style.removeProperty('height');
+    }
+    _freed = [];
+  }
+  window.addEventListener('resize', function(){ if(isMobile()) init(); else teardown(); });
 })();
 </script>
 </body>
