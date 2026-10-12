@@ -939,7 +939,7 @@ table.und-tbl td.c { text-align: center; }
     position: sticky; z-index: 15; box-shadow: 0 1px 0 rgba(0,0,0,.06);
     font-size: 9.5px; font-weight: 700; color: #8a98a8; letter-spacing: .3px;
   }
-  .mc-lhead i { font-style: normal; text-align: right; cursor: pointer;
+  .mc-lhead i { font-style: normal; text-align: right; cursor: default;
     padding: 3px 0; border-radius: 4px; user-select: none;
     -webkit-tap-highlight-color: transparent; white-space: nowrap; }
   .mc-lhead i:first-child { text-align: left; }
@@ -1023,6 +1023,63 @@ table.und-tbl td.c { text-align: center; }
     .rr-3 { background: #2563eb12; color: #2563eb; border: 1px solid #2563eb; }
     .rr-4 { background: #d9770612; color: #d97706; border: 1px solid #d97706; }
     .rr-5 { background: #dc262612; color: #dc2626; border: 1px solid #dc2626; }
+  
+    /* ===== 手機篩選折疊 + 快速排序 + 緊湊卡片 ===== */
+    @media (max-width: 767px) {
+      .und-filter-panel { display: none; }
+      .und-filter-panel.mob-fp-open { display: block; }
+      .mob-ctrl-bar {
+        display: flex; gap: 6px; padding: 8px 0 4px; align-items: center;
+      }
+      .mob-sort-pill {
+        flex: 1; padding: 9px 8px;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        background: #fff; font-size: 13px; font-weight: 500;
+        cursor: pointer; color: #475569; text-align: center;
+        -webkit-tap-highlight-color: transparent; font-family: inherit;
+      }
+      .mob-sort-pill.ms-active {
+        background: var(--accent, #1d4ed8); color: #fff;
+        border-color: var(--accent, #1d4ed8); font-weight: 700;
+      }
+      .mob-filter-pill {
+        padding: 9px 11px; flex-shrink: 0;
+        border: 1.5px solid #e2e8f0; border-radius: 8px;
+        background: #fff; font-size: 13px; font-weight: 500;
+        cursor: pointer; color: #475569;
+        display: flex; align-items: center; gap: 3px;
+        -webkit-tap-highlight-color: transparent; font-family: inherit;
+      }
+      .mob-filter-pill.ms-active { background: #f1f5f9; border-color: #94a3b8; }
+      .mc-header { padding: 8px 12px 7px; }
+      .mc-name { font-size: 12.5px; }
+      .mc-analyze button { font-size: 11px !important; padding: 4px 8px !important; }
+      .mc-rate-row { padding: 8px 12px; }
+      .mc-rate-val { font-size: 18px; }
+      .mc-badge { font-size: 10.5px; padding: 2px 7px; }
+      .mc-ret-item { padding: 7px 5px; }
+      .mc-ret-lbl { font-size: 9px; }
+      .mc-ret-val { font-size: 13px; }
+      .mc-more { padding: 7px 12px; font-size: 11.5px; }
+    }
+    /* 手機：四顆膠囊（配息率／一年／三年／搜尋）需擠在同一行 */
+    @media (max-width: 767px) {
+      .mob-ctrl-bar { gap: 6px !important; }
+      .mob-sort-pill, .mob-filter-pill {
+        flex: 1 1 0 !important; min-width: 0 !important;
+        padding-left: 4px !important; padding-right: 4px !important;
+        font-size: 12px !important; white-space: nowrap;
+      }
+      .mc-nm::after { content: ' ⌄'; color: #b9c4d2; font-weight: 700; }
+      .mobile-card.mc-open .mc-nm::after { content: ' ⌃'; }
+      .mc-ext-wrap { margin-top: 9px; }
+      .mc-ext {
+        display: block; text-align: center; min-height: 36px; line-height: 36px;
+        border: 1px solid var(--border); border-radius: 8px;
+        font-size: 12.5px; font-weight: 700; color: var(--blue);
+        text-decoration: none; background: #f7fafd;
+      }
+    }
   </style>
 </head>
 <body>
@@ -2416,9 +2473,7 @@ window.addEventListener('DOMContentLoaded', function() {
           '<span class="mc-code">'+txt(T('code'))+'</span>'+
           rateCell(T('rate'))+ retCell(T('r1y'))+ retCell(T('r3y'))+ riskCell(T('risk'))+
         '</div>'+
-        '<div class="mc-nm">'+(nameA
-          ? '<a href="'+nameA.href+'" target="_blank" rel="noopener" style="color:inherit;text-decoration:none">'+nameTxt+'</a>'
-          : nameTxt)+'</div>'+
+        '<div class="mc-nm">'+nameTxt+'</div>'+
         '<div class="mc-extra">'+
           '<div class="mc-grid">'+
             g('幣別', txt(T('cur')))+ g('頻率', txt(T('freq')))+
@@ -2427,6 +2482,7 @@ window.addEventListener('DOMContentLoaded', function() {
             (COLS.src!=null  ? g('來源', txt(T('src')))  : '')+
           '</div>'+
           (hasDiv6 ? '<div class="mc-div6m"><div class="mc-div6m-title">近6月配息</div>'+div6H+'</div>' : '')+
+          (nameA ? '<div class="mc-ext-wrap"><a class="mc-ext" href="'+nameA.href+'" target="_blank" rel="noopener">富邦官網標的頁面 ↗</a></div>' : '')+
           '<div class="mc-analyze"></div>'+
         '</div>';
       row.insertBefore(mc, row.firstChild);
@@ -2478,7 +2534,7 @@ window.addEventListener('DOMContentLoaded', function() {
       var el = is[i], col = +el.getAttribute('data-col');
       var on = (curCol() === col);
       el.classList.toggle('ms-on', on);
-      el.textContent = el.getAttribute('data-base') + (on ? (curDir()===-1?' ↓':' ↑') : '');
+      el.textContent = el.getAttribute('data-base');
     }
   }
   function ensureHead(table){
@@ -2494,15 +2550,6 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     head.innerHTML = h;
     box.insertBefore(head, box.firstChild);
-    head.addEventListener('click', function(ev){
-      var i = ev.target.closest('i'); if(!i) return;
-      var col = +i.getAttribute('data-col');
-      // 數值欄首次點擊給「高→低」；代號給 A→Z
-      var first = (curCol() !== col);
-      var dir = first ? (col === SORTCOL['代號'] ? 1 : -1) : -curDir();
-      doSort(col, dir);
-      setTimeout(function(){ paintHead(head); }, 60);
-    });
     head.style.top = stickyOffset(head)+'px';
     paintHead(head);
   }
@@ -2544,6 +2591,71 @@ window.addEventListener('DOMContentLoaded', function() {
     _freed = [];
   }
   window.addEventListener('resize', function(){ if(isMobile()) init(); else teardown(); });
+})();
+</script>
+
+<script>
+(function(){
+  function isMobile(){ return window.innerWidth < 768; }
+  function initMob(){
+    if(!isMobile()) return;
+    if(document.querySelector('.mob-ctrl-bar')) return;
+    var fp = document.querySelector('.und-filter-panel');
+    var msCol = document.getElementById('ms-col');
+    if(!fp || !msCol){ setTimeout(initMob, 400); return; }
+    var bar = document.createElement('div');
+    bar.className = 'mob-ctrl-bar';
+    var p1 = document.createElement('button');
+    p1.className = 'mob-sort-pill ms-active';
+    p1.textContent = '一年 ↓';
+    p1.dataset.v = '6';
+    var p2 = document.createElement('button');
+    p2.className = 'mob-sort-pill';
+    p2.textContent = '配息率 ↓';
+    p2.dataset.v = '4';
+    var p3 = document.createElement('button');
+    p3.className = 'mob-sort-pill';
+    p3.textContent = '三年 ↓';
+    p3.dataset.v = '7';
+    var pf = document.createElement('button');
+    pf.className = 'mob-filter-pill';
+    pf.innerHTML = '搜尋 <span>▾</span>';
+    bar.appendChild(p1); bar.appendChild(p2); bar.appendChild(p3); bar.appendChild(pf);
+    fp.parentElement.insertBefore(bar, fp);
+    function setSort(val, activeEl){
+      msCol.value = val;
+      msCol.dispatchEvent(new Event('change'));
+      [p1,p2,p3].forEach(function(b){ b.classList.remove('ms-active'); });
+      activeEl.classList.add('ms-active');
+    }
+    p1.addEventListener('click', function(){ setSort(this.dataset.v, this); });
+    p2.addEventListener('click', function(){ setSort(this.dataset.v, this); });
+    p3.addEventListener('click', function(){ setSort(this.dataset.v, this); });
+    pf.addEventListener('click', function(){
+      var open = fp.classList.toggle('mob-fp-open');
+      pf.innerHTML = open ? '搜尋 <span>▲</span>' : '搜尋 <span>▾</span>';
+      pf.classList.toggle('ms-active', open);
+      if(open){ var si=document.getElementById('ffs'); if(si) setTimeout(function(){ si.focus(); },80); }
+    });
+    if(msCol.value === '-1' || msCol.value === '') { setSort('4', p2); setTimeout(function(){ if(typeof _sortCol!=='undefined' && _sortCol>=0) sortBy(_sortCol,_sortDir); }, 700); }
+    else if(msCol.value === '4'){ p2.classList.add('ms-active'); p1.classList.remove('ms-active'); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', initMob);
+  else initMob();
+  window.addEventListener('resize', function(){ if(isMobile()) initMob(); });
+})();
+(function(){
+  function isMob(){ return window.innerWidth < 768; }
+  function fixTop(){
+    if(!isMob()) return;
+    var hdr = document.querySelector('.und-header');
+    var bar = document.querySelector('.mob-ctrl-bar');
+    if(hdr && bar) bar.style.top = hdr.offsetHeight + 'px';
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fixTop);
+  else fixTop();
+  window.addEventListener('resize', fixTop);
+  window.addEventListener('load', fixTop);
 })();
 </script>
 </body>
