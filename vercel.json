@@ -1,0 +1,14 @@
+{
+  "cleanUrls": true,
+  "crons": [
+    {
+      "path": "/api/data",
+      "schedule": "0 4 * * *"
+    }
+  ],
+  "functions": {
+    "api/data.js": {
+      "maxDuration": 60
+    }
+  }
+}
