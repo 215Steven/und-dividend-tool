@@ -1880,6 +1880,37 @@ async function startLoad(forceRefresh) {
       }
     }
   }
+  // ── 伺服器每日快照：所有人共用 CDN 快取，打到就是秒開 ────────
+  // 抓不到或資料不完整時自動落回下面的逐檔抓取，不會因為這支挂掉而全滞
+  try {
+    setProgress(ICON.zap + ' 讀取伺服器快照...', 55);
+    var _snapR = await fetch('/api/data' + (forceRefresh ? ('?t=' + Date.now()) : ''),
+      { signal: AbortSignal.timeout(55000) });
+    if (_snapR.ok) {
+      var _snap = await _snapR.json();
+      if (_snap && !_snap.error && _snap.report && _snap.report.length) {
+        $('st0').textContent = _snap.totalFunds;
+        $('st1').textContent = _snap.monthlyCount;
+        $('st2').textContent = _snap.rated;
+        $('st4').innerHTML   = _snap.savedAt + ' ' + ICON.zap + '每日快照';
+        window.UND_ROWS = _snap.report;
+        $('und-tbody').innerHTML = _snap.report.map(function(r, i) { return renderRow(r, i); }).join('');
+        saveCache({
+          report: _snap.report,
+          totalFunds: _snap.totalFunds,
+          monthlyCount: _snap.monthlyCount,
+          savedAt: _snap.savedAt
+        });
+        $('und-prog').style.display = 'none';
+        $('und-filter').style.display = 'block';
+        $('und-table').style.display = 'block';
+        applyFilter();
+        if ($('ms-col')) $('ms-col').value = '4';
+        sortBy(4, -1);
+        return;
+      }
+    }
+  } catch (_snapE) { /* 快照不可用，改走逐檔抓取 */ }
   if (!_quietRefresh) {
     $('und-filter').style.display = 'none';
     $('und-table').style.display = 'none';
