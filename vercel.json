@@ -2,13 +2,13 @@
   "redirects": [
     {
       "source": "/",
-      "destination": "https://fund.oosayhi.com/und",
-      "permanent": true
+      "destination": "https://fund.oosayhi.com/embed/und",
+      "permanent": false
     },
     {
       "source": "/index.html",
-      "destination": "https://fund.oosayhi.com/und",
-      "permanent": true
+      "destination": "https://fund.oosayhi.com/embed/und",
+      "permanent": false
     }
   ]
 }
