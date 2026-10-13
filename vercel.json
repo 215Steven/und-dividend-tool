@@ -1,14 +1,14 @@
 {
-  "cleanUrls": true,
-  "crons": [
+  "redirects": [
     {
-      "path": "/api/data",
-      "schedule": "0 4 * * *"
+      "source": "/",
+      "destination": "https://fund.oosayhi.com/und",
+      "permanent": true
+    },
+    {
+      "source": "/index.html",
+      "destination": "https://fund.oosayhi.com/und",
+      "permanent": true
     }
-  ],
-  "functions": {
-    "api/data.js": {
-      "maxDuration": 60
-    }
-  }
+  ]
 }
